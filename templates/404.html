@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- ============================================
+     ESCALA360 – Página 404 (Não encontrada)
+     Autor: Anderson de Matos Guimarães
+     Data: 24/10/2025
+   ============================================ -->
+
+<section class="flex flex-col items-center justify-center text-center py-20">
+  <!-- Ícone ilustrativo -->
+  <div class="mb-6">
+    <i class="fas fa-exclamation-triangle text-6xl text-yellow-500 dark:text-yellow-400"></i>
+  </div>
+
+  <!-- Título e mensagem -->
+  <h1 class="text-4xl font-bold text-gray-800 dark:text-gray-100 mb-4">
+    404 — Página não encontrada
+  </h1>
+  <p class="text-gray-600 dark:text-gray-400 max-w-lg mb-8">
+    A página que você está procurando pode ter sido movida, removida ou está temporariamente indisponível.<br>
+    Verifique o endereço ou volte para a página inicial.
+  </p>
+
+  <!-- Botões de navegação -->
+  <div class="flex flex-col sm:flex-row gap-4 justify-center">
+    <a href="{{ url_for('index') }}" class="btn-primary">
+      <i class="fas fa-home mr-2"></i> Voltar ao Painel
+    </a>
+    <a href="{{ url_for('escalas') }}" class="btn-outline">
+      <i class="fas fa-calendar-alt mr-2"></i> Ver Escalas
+    </a>
+  </div>
+
+  <!-- Texto de rodapé -->
+  <div class="mt-10 text-sm text-gray-400 dark:text-gray-500">
+    Se o problema persistir, entre em contato com o administrador do sistema.
+  </div>
+</section>
+
+{% endblock %}

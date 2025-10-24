@@ -1,0 +1,178 @@
+/* =========================================================
+   ESCALA360 - Custom CSS
+   Camada de estilo complementar ao Tailwind CSS (CDN)
+   Autor: Anderson de Matos Guimarães
+   Data: 24/10/2025
+   ========================================================= */
+
+/* ---------- VARIÁVEIS DE TEMA ---------- */
+:root {
+  --primary-color: #4f46e5; /* indigo-600 */
+  --secondary-color: #6366f1;
+  --accent-color: #818cf8;
+  --success-color: #16a34a;
+  --warning-color: #f59e0b;
+  --danger-color: #ef4444;
+  --text-light: #f3f4f6;
+  --text-dark: #1f2937;
+}
+
+/* ---------- RESET E AJUSTES GERAIS ---------- */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ---------- NAVBAR ---------- */
+.navbar {
+  backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.7);
+  transition: all 0.3s ease;
+}
+
+.dark .navbar {
+  background: rgba(31, 41, 55, 0.8);
+}
+
+.nav-active {
+  color: var(--primary-color);
+  font-weight: 600;
+  border-bottom: 2px solid var(--primary-color);
+}
+
+.nav-link {
+  transition: color 0.3s ease, border-color 0.3s ease;
+}
+.nav-link:hover {
+  color: var(--secondary-color);
+}
+
+/* ---------- BOTÕES ---------- */
+.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+}
+.btn-primary:hover {
+  background-color: var(--secondary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+}
+
+.btn-outline {
+  border: 2px solid var(--primary-color);
+  color: var(--primary-color);
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+}
+.btn-outline:hover {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+/* ---------- CARDS / DASHBOARD ---------- */
+.card {
+  background-color: white;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.dark .card {
+  background-color: #1f2937; /* gray-800 */
+  box-shadow: 0 1px 3px rgba(255, 255, 255, 0.05);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.1);
+}
+
+/* ---------- TABELAS ---------- */
+.table-container {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  transition: all 0.3s ease;
+}
+
+thead {
+  background-color: var(--accent-color);
+  color: white;
+}
+
+thead th {
+  font-weight: 600;
+  text-align: left;
+  padding: 0.75rem 1rem;
+}
+
+tbody td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+tbody tr:hover {
+  background-color: rgba(99, 102, 241, 0.05);
+}
+
+.dark thead {
+  background-color: #312e81; /* indigo-900 */
+}
+.dark tbody tr:hover {
+  background-color: rgba(99, 102, 241, 0.15);
+}
+
+/* ---------- FOOTER ---------- */
+footer {
+  background: #f9fafb;
+  color: #6b7280;
+  text-align: center;
+  padding: 1rem;
+  font-size: 0.875rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.dark footer {
+  background: #111827;
+  color: #9ca3af;
+  border-top-color: #1f2937;
+}
+
+/* ---------- TRANSIÇÕES E FEEDBACK ---------- */
+a, button {
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+a:focus, button:focus {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 3px;
+}
+
+/* ---------- SCROLLBAR PERSONALIZADA ---------- */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--accent-color);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
+}
