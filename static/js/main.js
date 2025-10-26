@@ -2,12 +2,12 @@
    ESCALA360 - Main JavaScript
    Interatividade e experiência do usuário (UX/UI)
    Autor: Anderson de Matos Guimarães
-   Data: 26/10/2025
+   Data: 27/10/2025
    ========================================================= */
 
 document.addEventListener("DOMContentLoaded", () => {
   // ===============================================
-  // 🌓 1. Modo Escuro Persistente (UX aprimorado)
+  // 🌓 1. Modo Escuro Persistente
   // ===============================================
   const html = document.documentElement;
   const toggle = document.querySelector("#darkToggle");
@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ===============================================
-  // 🔄 2. Animação ao trocar de rota
+  // 🔄 2. Animação de transição entre páginas
   // ===============================================
   const links = document.querySelectorAll("a[href]");
   links.forEach((link) => {
@@ -41,37 +41,26 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // ===============================================
-  // 📊 3. Escalas
+  // 📊 3. CRUD - Escalas
   // ===============================================
   if (window.location.pathname === "/escalas") {
-    fetch("/escalas/api")
-      .then((r) => r.json())
-      .then((data) => renderEscalas(data))
-      .catch(() => toast("⚠️ Falha ao carregar escalas."));
-  }
+    const form = document.querySelector("#form-escala");
+    const tbody = document.querySelector("#tabela-escalas tbody");
 
-  // ===============================================
-  // 👥 4. Usuários
-  // ===============================================
-  if (window.location.pathname === "/usuarios") {
-    const form = document.querySelector("#form-funcionario");
-    const tbody = document.querySelector("#tabela-funcionarios tbody");
+    // 🔹 Carrega as escalas ao iniciar
+    carregarEscalas();
 
-    fetch("/usuarios/api")
-      .then((r) => r.json())
-      .then((data) => renderFuncionarios(data))
-      .catch(() => toast("⚠️ Não foi possível carregar os funcionários."));
-
+    // 🔹 Submissão do formulário (CREATE)
     form.addEventListener("submit", (e) => {
       e.preventDefault();
       const payload = {
-        nome: form.nome.value,
-        cargo: form.cargo.value,
-        email: form.email.value,
-        ativo: form.ativo.checked,
+        funcionario_id: form.funcionario_id.value,
+        turno_id: form.turno_id.value,
+        data: form.data.value,
+        status: form.status.value,
       };
 
-      fetch("/usuarios/api", {
+      fetch("/escalas/api", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -79,60 +68,151 @@ document.addEventListener("DOMContentLoaded", () => {
         .then((r) => r.json())
         .then((res) => {
           if (res.ok) {
-            toast("✅ Funcionário cadastrado!");
+            toast("✅ Escala cadastrada com sucesso!");
             form.reset();
-            return fetch("/usuarios/api")
-              .then((r) => r.json())
-              .then(renderFuncionarios);
+            carregarEscalas();
+          } else {
+            throw new Error(res.error || "Erro desconhecido");
           }
-          throw new Error(res.error || "Erro desconhecido");
         })
         .catch((err) => toast("❌ Erro: " + err.message));
     });
-  }
 
-  // ===============================================
-  // ⏰ 5. Turnos
-  // ===============================================
-  if (window.location.pathname === "/turnos") {
-    const form = document.querySelector("#form-turno");
-    const tbody = document.querySelector("#tabela-turnos tbody");
+    // 🔹 Função para carregar escalas
+    function carregarEscalas() {
+      fetch("/escalas/api")
+        .then((r) => r.json())
+        .then((data) => renderEscalas(data))
+        .catch(() => toast("⚠️ Não foi possível carregar as escalas."));
+    }
 
-    fetch("/turnos/api")
-      .then((r) => r.json())
-      .then((data) => renderTurnos(data))
-      .catch(() => toast("⚠️ Não foi possível carregar os turnos."));
+    // 🔹 Renderização das escalas na tabela
+    function renderEscalas(data) {
+      if (!tbody) return;
+      if (!data.length) {
+        tbody.innerHTML =
+          '<tr><td colspan="5" class="text-center py-4 text-gray-400">Nenhuma escala cadastrada.</td></tr>';
+        return;
+      }
 
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const payload = {
-        nome: form.nome.value,
-        inicio: form.inicio.value,
-        fim: form.fim.value,
-      };
+      tbody.innerHTML = data
+        .map(
+          (row) => `
+        <tr class="hover:bg-indigo-50 dark:hover:bg-indigo-900 transition">
+          <td class="px-4 py-2">${row.funcionario}</td>
+          <td class="px-4 py-2">${row.turno}</td>
+          <td class="px-4 py-2">${row.data}</td>
+          <td class="px-4 py-2 font-semibold text-${
+            row.status === "Ativo"
+              ? "green"
+              : row.status === "Substituto"
+              ? "yellow"
+              : "red"
+          }-600">${row.status}</td>
+          <td class="px-4 py-2 text-right space-x-2">
+            <button class="btn-outline text-sm edit-btn" data-id="${
+              row.id
+            }">✏️ Editar</button>
+            <button class="btn-outline text-sm delete-btn text-red-600" data-id="${
+              row.id
+            }">🗑️ Excluir</button>
+          </td>
+        </tr>`
+        )
+        .join("");
 
-      fetch("/turnos/api", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      })
+      // Botões de ação
+      tbody.querySelectorAll(".edit-btn").forEach((btn) =>
+        btn.addEventListener("click", () => abrirModalEdicao(btn.dataset.id))
+      );
+
+      tbody.querySelectorAll(".delete-btn").forEach((btn) =>
+        btn.addEventListener("click", () => excluirEscala(btn.dataset.id))
+      );
+    }
+
+    // 🔹 Modal de Edição (UPDATE)
+    function abrirModalEdicao(id) {
+      fetch(`/escalas/api`)
+        .then((r) => r.json())
+        .then((escalas) => {
+          const escala = escalas.find((e) => e.id == id);
+          if (!escala) return toast("⚠️ Escala não encontrada.");
+
+          const modal = document.createElement("div");
+          modal.className =
+            "fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 fade-in";
+          modal.innerHTML = `
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-96 relative">
+              <h2 class="text-lg font-semibold mb-4 text-indigo-600">Editar Escala</h2>
+              <form id="form-edit-escala">
+                <label>Data</label>
+                <input type="date" name="data" value="${escala.data}" class="w-full p-2 mb-2 rounded border dark:bg-gray-700">
+                <label>Status</label>
+                <select name="status" class="w-full p-2 mb-2 rounded border dark:bg-gray-700">
+                  <option value="Ativo" ${escala.status === "Ativo" ? "selected" : ""}>Ativo</option>
+                  <option value="Substituto" ${escala.status === "Substituto" ? "selected" : ""}>Substituto</option>
+                  <option value="Vago" ${escala.status === "Vago" ? "selected" : ""}>Vago</option>
+                </select>
+                <div class="text-right mt-4 space-x-2">
+                  <button type="button" id="cancelar-edicao" class="btn-outline">Cancelar</button>
+                  <button type="submit" class="btn-outline bg-indigo-600 text-white">Salvar</button>
+                </div>
+              </form>
+            </div>
+          `;
+          document.body.appendChild(modal);
+
+          modal.querySelector("#cancelar-edicao").onclick = () => modal.remove();
+
+          modal.querySelector("#form-edit-escala").onsubmit = (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const payload = {
+              data: formData.get("data"),
+              status: formData.get("status"),
+            };
+
+            fetch(`/escalas/api/${id}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            })
+              .then((r) => r.json())
+              .then((res) => {
+                if (res.ok) {
+                  toast("✅ Escala atualizada com sucesso!");
+                  modal.remove();
+                  carregarEscalas();
+                } else {
+                  throw new Error(res.error);
+                }
+              })
+              .catch((err) => toast("❌ Erro: " + err.message));
+          };
+        });
+    }
+
+    // 🔹 Exclusão (DELETE)
+    function excluirEscala(id) {
+      if (!confirm("Deseja realmente excluir esta escala?")) return;
+
+      fetch(`/escalas/api/${id}`, { method: "DELETE" })
         .then((r) => r.json())
         .then((res) => {
           if (res.ok) {
-            toast("✅ Turno cadastrado com sucesso!");
-            form.reset();
-            return fetch("/turnos/api")
-              .then((r) => r.json())
-              .then(renderTurnos);
+            toast("🗑️ Escala excluída com sucesso!");
+            carregarEscalas();
+          } else {
+            throw new Error(res.error);
           }
-          throw new Error(res.error || "Erro desconhecido");
         })
         .catch((err) => toast("❌ Erro: " + err.message));
-    });
+    }
   }
 
   // ===============================================
-  // 📈 6. Painel BI (placeholder)
+  // 📈 4. Painel BI Placeholder
   // ===============================================
   if (window.location.pathname === "/") {
     const chartContainer = document.getElementById("chart-bi");
@@ -147,134 +227,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // =====================================================
-// ⚙️ Renderização: Escalas
-// =====================================================
-function renderEscalas(data) {
-  const tbody = document.querySelector("#tabela-escalas tbody");
-  if (!tbody) return;
-  if (!data.length) {
-    tbody.innerHTML =
-      '<tr><td colspan="4" class="text-center py-4 text-gray-400">Nenhuma escala encontrada.</td></tr>';
-    return;
-  }
-  tbody.innerHTML = data
-    .map(
-      (row) => `
-      <tr class="hover:bg-indigo-50 dark:hover:bg-indigo-900 transition">
-        <td class="px-4 py-2">${row.servidor}</td>
-        <td class="px-4 py-2">${row.turno}</td>
-        <td class="px-4 py-2 text-${
-          row.status === "Ativo"
-            ? "green"
-            : row.status === "Substituto"
-            ? "yellow"
-            : "red"
-        }-600 font-semibold">${row.status}</td>
-        <td class="px-4 py-2 text-right">
-          <button class="btn-outline text-sm">Editar</button>
-        </td>
-      </tr>`
-    )
-    .join("");
-}
-
-// =====================================================
-// ⚙️ Renderização: Funcionários
-// =====================================================
-function renderFuncionarios(data) {
-  const tbody = document.querySelector("#tabela-funcionarios tbody");
-  if (!tbody) return;
-  if (!data.length) {
-    tbody.innerHTML =
-      '<tr><td colspan="4" class="text-center py-4 text-gray-400">Nenhum funcionário encontrado.</td></tr>';
-    return;
-  }
-  tbody.innerHTML = data
-    .map(
-      (f) => `
-      <tr class="hover:bg-indigo-50 dark:hover:bg-indigo-900 transition">
-        <td class="px-4 py-2">${f.nome}</td>
-        <td class="px-4 py-2">${f.cargo}</td>
-        <td class="px-4 py-2">${f.email}</td>
-        <td class="px-4 py-2 text-center">
-          <span class="px-2 py-1 rounded-full text-xs font-semibold ${
-            f.ativo
-              ? "bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-200"
-              : "bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-200"
-          }">${f.ativo ? "Ativo" : "Inativo"}</span>
-        </td>
-      </tr>`
-    )
-    .join("");
-}
-
-// =====================================================
-// ⚙️ Renderização: Turnos
-// =====================================================
-function renderTurnos(data) {
-  const tbody = document.querySelector("#tabela-turnos tbody");
-  if (!tbody) return;
-  if (!data.length) {
-    tbody.innerHTML =
-      '<tr><td colspan="3" class="text-center py-4 text-gray-400">Nenhum turno cadastrado.</td></tr>';
-    return;
-  }
-  tbody.innerHTML = data
-    .map(
-      (t) => `
-      <tr class="hover:bg-indigo-50 dark:hover:bg-indigo-900 transition">
-        <td class="px-4 py-2">${t.nome}</td>
-        <td class="px-4 py-2 text-center">${t.inicio}</td>
-        <td class="px-4 py-2 text-center">${t.fim}</td>
-      </tr>`
-    )
-    .join("");
-}
-
-// =====================================================
-// 📆 Cadastro e listagem de escalas
-// =====================================================
-if (window.location.pathname === "/escalas") {
-  const form = document.querySelector("#form-escala");
-  const tbody = document.querySelector("#tabela-escalas tbody");
-
-  // Carrega as escalas existentes
-  fetch("/escalas/api")
-    .then((r) => r.json())
-    .then((data) => renderEscalas(data))
-    .catch(() => toast("⚠️ Não foi possível carregar as escalas."));
-
-  // Submissão do formulário
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
-
-    const payload = {
-      funcionario_id: form.funcionario_id.value,
-      turno_id: form.turno_id.value,
-      data: form.data.value,
-      status: form.status.value,
-    };
-
-    fetch("/escalas/api", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    })
-      .then((r) => r.json())
-      .then((res) => {
-        if (res.ok) {
-          toast("✅ Escala cadastrada com sucesso!");
-          form.reset();
-          return fetch("/escalas/api").then((r) => r.json()).then(renderEscalas);
-        }
-        throw new Error(res.error || "Erro desconhecido");
-      })
-      .catch((err) => toast("❌ Erro ao cadastrar: " + err.message));
-  });
-}
-
-// =====================================================
-// 🔔 Toasts e animações globais
+// 🔔 Toast e Animações Globais
 // =====================================================
 function toast(message) {
   const t = document.createElement("div");
