@@ -8,21 +8,24 @@ Framework: Flask 3.1.2
 
 Descrição:
 Aplicação web modular para gestão de escalas, substituições e produtividade
-de profissionais em plantões. Inclui rotas principais, API mock e tratamento
-de erros customizados, com design responsivo e UX moderna.
+de profissionais em plantões. Inclui rotas principais, integração com banco
+SQLite, API simulada e tratamento de erros customizados, com design moderno.
 ===========================================================
 """
 
 from flask import Flask, render_template, jsonify, request
 from config import Config
+from models import db, init_app, popular_banco_inicial
 import logging
-import os
 
 # =========================================================
 # 🔧 Inicialização da Aplicação Flask
 # =========================================================
 app = Flask(__name__)
 app.config.from_object(Config)
+
+# Inicializa o banco de dados (SQLAlchemy)
+init_app(app)
 
 # =========================================================
 # 🧾 Configuração de Logging
@@ -33,7 +36,10 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%d/%m/%Y %H:%M:%S"
 )
-app.logger.info("✅ Configurações carregadas com sucesso.")
+app.logger.info("✅ Configurações carregadas e banco inicializado.")
+
+# Popula o banco de dados com dados de exemplo (caso vazio)
+popular_banco_inicial(app)
 
 # =========================================================
 # 🔹 Rotas Principais
@@ -53,22 +59,29 @@ def escalas():
 
 
 # =========================================================
-# 🔹 API simulada (mock)
+# 🔹 API simulada / real (dados do banco)
 # =========================================================
 @app.route('/api/escalas')
 def api_escalas():
-    """Endpoint simulado para retorno de dados de escalas."""
-    app.logger.info("Consulta à API /api/escalas (mock)")
+    """
+    Retorna todas as escalas do banco de dados (mock inicial).
+    Substitui os dados estáticos anteriores por dados reais.
+    """
+    app.logger.info("Consulta à API /api/escalas (banco de dados)")
 
-    data = [
-        {"id": 1, "servidor": "João Silva", "turno": "Matutino", "status": "Ativo"},
-        {"id": 2, "servidor": "Maria Souza", "turno": "Noturno", "status": "Substituto"},
-        {"id": 3, "servidor": "Carlos Lima", "turno": "Vespertino", "status": "Vago"},
-        {"id": 4, "servidor": "Fernanda Alves", "turno": "Matutino", "status": "Ativo"},
-        {"id": 5, "servidor": "Ricardo Teles", "turno": "Vespertino", "status": "Vago"},
-        {"id": 6, "servidor": "Tatiane Ramos", "turno": "Noturno", "status": "Substituto"}
+    from models import Escala, Funcionario, Turno
+    escalas = Escala.query.all()
+    resultado = [
+        {
+            "id": e.id,
+            "data": e.data.strftime("%d/%m/%Y"),
+            "servidor": e.funcionario.nome if e.funcionario else "—",
+            "turno": e.turno.nome if e.turno else "—",
+            "status": e.status
+        }
+        for e in escalas
     ]
-    return jsonify(data)
+    return jsonify(resultado)
 
 
 # =========================================================
