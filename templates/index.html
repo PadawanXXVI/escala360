@@ -4,7 +4,7 @@
 <!-- ============================================
      ESCALA360 – Painel de Produtividade (Home)
      Autor: Anderson de Matos Guimarães
-     Data: 24/10/2025
+     Data: 27/10/2025
    ============================================ -->
 
 <section>
@@ -22,19 +22,19 @@
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
     <div class="card text-center">
       <h3 class="text-sm text-gray-500 dark:text-gray-400 uppercase">Plantões Alocados</h3>
-      <p class="text-4xl font-bold text-indigo-600 dark:text-indigo-400 mt-2">128</p>
+      <p class="text-4xl font-bold text-indigo-600 dark:text-indigo-400 mt-2">—</p>
       <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Últimas 24h</p>
     </div>
 
     <div class="card text-center">
       <h3 class="text-sm text-gray-500 dark:text-gray-400 uppercase">Plantões Vagos</h3>
-      <p class="text-4xl font-bold text-red-500 dark:text-red-400 mt-2">14</p>
+      <p class="text-4xl font-bold text-red-500 dark:text-red-400 mt-2">—</p>
       <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Necessitam substituição</p>
     </div>
 
     <div class="card text-center">
       <h3 class="text-sm text-gray-500 dark:text-gray-400 uppercase">Substituições Pendentes</h3>
-      <p class="text-4xl font-bold text-yellow-500 dark:text-yellow-400 mt-2">5</p>
+      <p class="text-4xl font-bold text-yellow-500 dark:text-yellow-400 mt-2">—</p>
       <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Em análise</p>
     </div>
   </div>
@@ -44,37 +44,13 @@
     <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">
       Distribuição Geral de Plantões
     </h2>
-    <div id="chart-bi"></div>
+    <div id="chart-bi" class="min-h-[400px] flex items-center justify-center text-gray-400 dark:text-gray-500">
+      <i class="fas fa-spinner fa-spin mr-2"></i> Carregando dados do painel...
+    </div>
   </div>
 
   <!-- Script Plotly -->
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const data = [{
-        x: ['Alocados', 'Vagos', 'Pendentes'],
-        y: [128, 14, 5],
-        type: 'bar',
-        marker: {
-          color: ['#4f46e5', '#ef4444', '#f59e0b']
-        },
-        text: ['Plantões ativos', 'Sem designação', 'Aguardando substituição'],
-        textposition: 'auto'
-      }];
-
-      const layout = {
-        title: 'Produtividade Geral',
-        plot_bgcolor: 'transparent',
-        paper_bgcolor: 'transparent',
-        font: { color: '#6b7280' },
-        xaxis: { title: 'Situação' },
-        yaxis: { title: 'Quantidade' },
-        margin: { t: 40, l: 60, r: 30, b: 60 }
-      };
-
-      Plotly.newPlot('chart-bi', data, layout, { responsive: true });
-    });
-  </script>
 </section>
 
 {% endblock %}
