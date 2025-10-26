@@ -1,3 +1,63 @@
-__pycache__
-.venv
+# ============================================
+# 🚫 ESCALA360 - .gitignore
+# ============================================
 
+# 🐍 Python
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+
+# 🧱 Ambientes virtuais
+.venv/
+venv/
+env/
+ENV/
+
+# 📦 Dependências
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# 🧾 Arquivos de configuração locais
+.env
+*.env
+.env.*
+!.env.example
+
+# 🧰 Logs e relatórios
+logs/
+*.log
+*.out
+*.err
+
+# 💻 IDEs e editores
+.vscode/
+.idea/
+*.code-workspace
+
+# 📁 Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 🧪 Cache de testes e notebooks
+.ipynb_checkpoints/
+.pytest_cache/
+.cache/
+
+# 📊 Arquivos temporários ou exportados
+*.csv
+*.xlsx
+*.json
+*.zip
+*.bak
+*.tmp
+
+# ⚙️ Deploy (Vercel / Heroku / Render)
+.vercel/
+.vercel_build_output/
