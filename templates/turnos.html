@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Gestão de Turnos – Escala360{% endblock %}
+
+{% block content %}
+<section class="page-section fade-in max-w-4xl mx-auto my-8">
+  <header class="mb-6">
+    <h1 class="text-2xl font-semibold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
+      <i class="fas fa-clock"></i> Gestão de Turnos
+    </h1>
+    <p class="text-gray-600 dark:text-gray-400">
+      Cadastre os turnos disponíveis para a escala de trabalho.
+    </p>
+  </header>
+
+  <!-- 🧾 Formulário -->
+  <form id="form-turno" class="bg-white dark:bg-gray-800 shadow-md rounded-xl p-6 space-y-4">
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="md:col-span-1">
+        <label for="nome" class="label">Nome do Turno</label>
+        <input type="text" id="nome" name="nome" class="input" placeholder="Ex: Matutino" required />
+      </div>
+      <div>
+        <label for="inicio" class="label">Início</label>
+        <input type="time" id="inicio" name="inicio" class="input" required />
+      </div>
+      <div>
+        <label for="fim" class="label">Fim</label>
+        <input type="time" id="fim" name="fim" class="input" required />
+      </div>
+    </div>
+    <div class="flex justify-end pt-4">
+      <button type="submit" class="btn-primary">
+        <i class="fas fa-save"></i> Cadastrar Turno
+      </button>
+    </div>
+  </form>
+
+  <!-- 📋 Tabela -->
+  <div class="mt-10">
+    <h2 class="text-lg font-semibold mb-3 text-gray-700 dark:text-gray-300">
+      Turnos cadastrados
+    </h2>
+    <div class="overflow-x-auto rounded-xl shadow-md">
+      <table id="tabela-turnos" class="w-full text-sm">
+        <thead class="bg-indigo-600 text-white">
+          <tr>
+            <th class="px-4 py-2 text-left">Nome</th>
+            <th class="px-4 py-2 text-center">Início</th>
+            <th class="px-4 py-2 text-center">Fim</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+          <tr>
+            <td colspan="3" class="text-center py-4 text-gray-400">Nenhum turno cadastrado.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}

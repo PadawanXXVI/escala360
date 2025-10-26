@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ===============================================
-  // 🔄 2. Animação de carregamento ao trocar de rota
+  // 🔄 2. Animação ao trocar de rota
   // ===============================================
   const links = document.querySelectorAll("a[href]");
   links.forEach((link) => {
@@ -41,35 +41,27 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // ===============================================
-  // 📊 3. Carregamento dinâmico de dados (tabelas e BI)
+  // 📊 3. Escalas
   // ===============================================
   if (window.location.pathname === "/escalas") {
-    fetch("/escalas/api") // ✅ corrigido para refletir o Blueprint
-      .then((r) => {
-        if (!r.ok) throw new Error(`Erro HTTP: ${r.status}`);
-        return r.json();
-      })
+    fetch("/escalas/api")
+      .then((r) => r.json())
       .then((data) => renderEscalas(data))
-      .catch((err) => {
-        console.warn("Falha ao carregar escalas:", err);
-        toast("⚠️ Não foi possível carregar os dados de escalas");
-      });
+      .catch(() => toast("⚠️ Falha ao carregar escalas."));
   }
 
   // ===============================================
-  // 👥 4. Cadastro e listagem de funcionários
+  // 👥 4. Usuários
   // ===============================================
   if (window.location.pathname === "/usuarios") {
     const form = document.querySelector("#form-funcionario");
     const tbody = document.querySelector("#tabela-funcionarios tbody");
 
-    // Carrega lista inicial
     fetch("/usuarios/api")
       .then((r) => r.json())
       .then((data) => renderFuncionarios(data))
       .catch(() => toast("⚠️ Não foi possível carregar os funcionários."));
 
-    // Envio do formulário
     form.addEventListener("submit", (e) => {
       e.preventDefault();
       const payload = {
@@ -87,7 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .then((r) => r.json())
         .then((res) => {
           if (res.ok) {
-            toast("✅ Funcionário cadastrado com sucesso!");
+            toast("✅ Funcionário cadastrado!");
             form.reset();
             return fetch("/usuarios/api")
               .then((r) => r.json())
@@ -95,12 +87,52 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           throw new Error(res.error || "Erro desconhecido");
         })
-        .catch((err) => toast("❌ Erro ao cadastrar: " + err.message));
+        .catch((err) => toast("❌ Erro: " + err.message));
     });
   }
 
   // ===============================================
-  // 📈 5. Placeholder para gráficos (Plotly, futuramente)
+  // ⏰ 5. Turnos
+  // ===============================================
+  if (window.location.pathname === "/turnos") {
+    const form = document.querySelector("#form-turno");
+    const tbody = document.querySelector("#tabela-turnos tbody");
+
+    fetch("/turnos/api")
+      .then((r) => r.json())
+      .then((data) => renderTurnos(data))
+      .catch(() => toast("⚠️ Não foi possível carregar os turnos."));
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const payload = {
+        nome: form.nome.value,
+        inicio: form.inicio.value,
+        fim: form.fim.value,
+      };
+
+      fetch("/turnos/api", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+        .then((r) => r.json())
+        .then((res) => {
+          if (res.ok) {
+            toast("✅ Turno cadastrado com sucesso!");
+            form.reset();
+            return fetch("/turnos/api")
+              .then((r) => r.json())
+              .then(renderTurnos);
+          }
+          throw new Error(res.error || "Erro desconhecido");
+        })
+        .catch((err) => toast("❌ Erro: " + err.message));
+    });
+  }
+
+  // ===============================================
+  // 📈 6. Painel BI (placeholder)
   // ===============================================
   if (window.location.pathname === "/") {
     const chartContainer = document.getElementById("chart-bi");
@@ -115,56 +147,48 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // =====================================================
-// ⚙️ Função auxiliar: renderiza tabela de escalas
+// ⚙️ Renderização: Escalas
 // =====================================================
 function renderEscalas(data) {
   const tbody = document.querySelector("#tabela-escalas tbody");
   if (!tbody) return;
-
   if (!data.length) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="4" class="text-center py-4 text-gray-400">
-          Nenhuma escala encontrada.
-        </td>
-      </tr>`;
+    tbody.innerHTML =
+      '<tr><td colspan="4" class="text-center py-4 text-gray-400">Nenhuma escala encontrada.</td></tr>';
     return;
   }
-
   tbody.innerHTML = data
     .map(
       (row) => `
-    <tr class="hover:bg-indigo-50 dark:hover:bg-indigo-900 transition">
-      <td class="px-4 py-2">${row.servidor}</td>
-      <td class="px-4 py-2">${row.turno}</td>
-      <td class="px-4 py-2 text-${
-        row.status === "Ativo"
-          ? "green"
-          : row.status === "Substituto"
-          ? "yellow"
-          : "red"
-      }-600 font-semibold">${row.status}</td>
-      <td class="px-4 py-2 text-right">
-        <button class="btn-outline text-sm">Editar</button>
-      </td>
-    </tr>`
+      <tr class="hover:bg-indigo-50 dark:hover:bg-indigo-900 transition">
+        <td class="px-4 py-2">${row.servidor}</td>
+        <td class="px-4 py-2">${row.turno}</td>
+        <td class="px-4 py-2 text-${
+          row.status === "Ativo"
+            ? "green"
+            : row.status === "Substituto"
+            ? "yellow"
+            : "red"
+        }-600 font-semibold">${row.status}</td>
+        <td class="px-4 py-2 text-right">
+          <button class="btn-outline text-sm">Editar</button>
+        </td>
+      </tr>`
     )
     .join("");
 }
 
 // =====================================================
-// 🧩 Função auxiliar: renderiza tabela de funcionários
+// ⚙️ Renderização: Funcionários
 // =====================================================
 function renderFuncionarios(data) {
   const tbody = document.querySelector("#tabela-funcionarios tbody");
   if (!tbody) return;
-
   if (!data.length) {
     tbody.innerHTML =
       '<tr><td colspan="4" class="text-center py-4 text-gray-400">Nenhum funcionário encontrado.</td></tr>';
     return;
   }
-
   tbody.innerHTML = data
     .map(
       (f) => `
@@ -185,7 +209,30 @@ function renderFuncionarios(data) {
 }
 
 // =====================================================
-// 🔔 Função auxiliar: toast minimalista
+// ⚙️ Renderização: Turnos
+// =====================================================
+function renderTurnos(data) {
+  const tbody = document.querySelector("#tabela-turnos tbody");
+  if (!tbody) return;
+  if (!data.length) {
+    tbody.innerHTML =
+      '<tr><td colspan="3" class="text-center py-4 text-gray-400">Nenhum turno cadastrado.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data
+    .map(
+      (t) => `
+      <tr class="hover:bg-indigo-50 dark:hover:bg-indigo-900 transition">
+        <td class="px-4 py-2">${t.nome}</td>
+        <td class="px-4 py-2 text-center">${t.inicio}</td>
+        <td class="px-4 py-2 text-center">${t.fim}</td>
+      </tr>`
+    )
+    .join("");
+}
+
+// =====================================================
+// 🔔 Toasts e animações globais
 // =====================================================
 function toast(message) {
   const t = document.createElement("div");
@@ -199,9 +246,6 @@ function toast(message) {
   }, 2000);
 }
 
-// =====================================================
-// ✨ Animações de entrada e saída global
-// =====================================================
 document.addEventListener("DOMContentLoaded", () => {
   document.body.classList.add("fade-in");
 });
