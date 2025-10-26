@@ -8,13 +8,14 @@ Data: 27/10/2025
 Descrição:
 Módulo responsável por gerenciar as escalas de trabalho.
 Inclui as rotas para CRUD completo e endpoints em JSON
-para integração com o front-end (AJAX).
+para integração com o front-end (AJAX e BI).
 ===========================================================
 """
 
 from flask import Blueprint, render_template, request, jsonify
 from models import db, Escala, Funcionario, Turno
-from datetime import datetime
+from datetime import datetime, timedelta
+import random
 
 escalas_bp = Blueprint("escalas_bp", __name__, url_prefix="/escalas")
 
@@ -128,3 +129,40 @@ def excluir_escala(id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"ok": False, "error": str(e)}), 400
+
+
+# =========================================================
+# 📊 API - Dashboard (BI)
+# =========================================================
+@escalas_bp.get("/api/dashboard")
+def dashboard_bi():
+    """
+    Retorna dados simulados de produtividade para o painel BI.
+    Pode futuramente ser conectado ao banco real de escalas.
+    """
+    hoje = datetime.now().date()
+
+    # Simulação de dados dos últimos 7 dias
+    dias = [(hoje - timedelta(days=i)).strftime("%d/%m") for i in range(6, -1, -1)]
+    plantoes_alocados = [random.randint(90, 150) for _ in dias]
+    plantoes_vagos = [random.randint(5, 20) for _ in dias]
+    substituicoes = [random.randint(0, 10) for _ in dias]
+
+    # Indicadores principais
+    kpis = {
+        "alocados": plantoes_alocados[-1],
+        "vagos": plantoes_vagos[-1],
+        "substituicoes": substituicoes[-1],
+        "produtividade": round(
+            (plantoes_alocados[-1] / (plantoes_alocados[-1] + plantoes_vagos[-1])) * 100, 1
+        ),
+    }
+
+    grafico = {
+        "dias": dias,
+        "alocados": plantoes_alocados,
+        "vagos": plantoes_vagos,
+        "substituicoes": substituicoes,
+    }
+
+    return jsonify({"kpis": kpis, "grafico": grafico})
