@@ -2,7 +2,7 @@
    ESCALA360 - Custom CSS
    Camada de estilo complementar ao Tailwind CSS (CDN)
    Autor: Anderson de Matos Guimarães
-   Data: 24/10/2025
+   Data: 26/10/2025
    ========================================================= */
 
 /* ---------- VARIÁVEIS DE TEMA ---------- */
@@ -65,17 +65,22 @@ body {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
 }
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
 .btn-outline {
   border: 2px solid var(--primary-color);
   color: var(--primary-color);
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 0.75rem;
   border-radius: 0.5rem;
   transition: all 0.3s ease;
 }
 .btn-outline:hover {
   background-color: var(--primary-color);
   color: white;
+  box-shadow: 0 3px 10px rgba(79, 70, 229, 0.25);
 }
 
 /* ---------- CARDS / DASHBOARD ---------- */
