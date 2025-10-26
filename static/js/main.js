@@ -212,17 +212,77 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ===============================================
-  // 📈 4. Painel BI Placeholder
+  // 📈 4. Painel BI Dinâmico
   // ===============================================
   if (window.location.pathname === "/") {
     const chartContainer = document.getElementById("chart-bi");
-    if (chartContainer) {
-      chartContainer.innerHTML = `
-        <div class="text-center py-8 text-gray-500 dark:text-gray-400">
-          <i class="fas fa-chart-line text-4xl mb-4"></i><br>
-          Painel BI em desenvolvimento...
-        </div>`;
-    }
+    const kpiCards = document.querySelectorAll(".card");
+
+    fetch("/escalas/api/dashboard")
+      .then((r) => r.json())
+      .then((dados) => {
+        const { kpis, grafico } = dados;
+
+        // Atualiza KPIs
+        const [alocados, vagos, substituicoes, produtividade] = [
+          kpis.alocados,
+          kpis.vagos,
+          kpis.substituicoes,
+          kpis.produtividade,
+        ];
+
+        if (kpiCards.length >= 3) {
+          kpiCards[0].querySelector("p.text-4xl").textContent = alocados;
+          kpiCards[1].querySelector("p.text-4xl").textContent = vagos;
+          kpiCards[2].querySelector("p.text-4xl").textContent = substituicoes;
+        }
+
+        // Renderiza gráfico Plotly
+        if (chartContainer) {
+          const data = [
+            {
+              x: grafico.dias,
+              y: grafico.alocados,
+              name: "Alocados",
+              type: "bar",
+              marker: { color: "#4f46e5" },
+            },
+            {
+              x: grafico.dias,
+              y: grafico.vagos,
+              name: "Vagos",
+              type: "bar",
+              marker: { color: "#ef4444" },
+            },
+            {
+              x: grafico.dias,
+              y: grafico.substituicoes,
+              name: "Substituições",
+              type: "bar",
+              marker: { color: "#f59e0b" },
+            },
+          ];
+
+          const layout = {
+            barmode: "group",
+            title: `Produtividade Geral - ${produtividade}%`,
+            plot_bgcolor: "transparent",
+            paper_bgcolor: "transparent",
+            font: { color: "#6b7280" },
+            xaxis: { title: "Dias" },
+            yaxis: { title: "Quantidade" },
+            margin: { t: 50, l: 50, r: 30, b: 50 },
+          };
+
+          Plotly.newPlot("chart-bi", data, layout, { responsive: true });
+        }
+      })
+      .catch(() => {
+        if (chartContainer) {
+          chartContainer.innerHTML =
+            '<div class="text-center py-8 text-gray-500 dark:text-gray-400">⚠️ Erro ao carregar dados do BI.</div>';
+        }
+      });
   }
 });
 
