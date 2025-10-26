@@ -2,7 +2,7 @@
    ESCALA360 - Main JavaScript
    Interatividade e experiência do usuário (UX/UI)
    Autor: Anderson de Matos Guimarães
-   Data: 24/10/2025
+   Data: 26/10/2025
    ========================================================= */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -13,20 +13,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const toggle = document.querySelector("#darkToggle");
   const storedTheme = localStorage.getItem("theme");
 
-  // Aplica o tema salvo
   if (storedTheme === "dark") html.classList.add("dark");
   if (storedTheme === "light") html.classList.remove("dark");
 
-  // Evento de alternância
   if (toggle) {
     toggle.addEventListener("click", () => {
       html.classList.toggle("dark");
       const isDark = html.classList.contains("dark");
       localStorage.setItem("theme", isDark ? "dark" : "light");
-
-      // feedback visual
-      const mode = isDark ? "🌙 Modo escuro ativado" : "☀️ Modo claro ativado";
-      toast(mode);
+      toast(isDark ? "🌙 Modo escuro ativado" : "☀️ Modo claro ativado");
     });
   }
 
@@ -49,10 +44,16 @@ document.addEventListener("DOMContentLoaded", () => {
   // 📊 3. Carregamento dinâmico de dados (tabelas e BI)
   // ===============================================
   if (window.location.pathname === "/escalas") {
-    fetch("/api/escalas")
-      .then((r) => r.json())
+    fetch("/escalas/api") // ✅ corrigido para refletir o Blueprint
+      .then((r) => {
+        if (!r.ok) throw new Error(`Erro HTTP: ${r.status}`);
+        return r.json();
+      })
       .then((data) => renderEscalas(data))
-      .catch(() => console.warn("Nenhum dado encontrado para /escalas"));
+      .catch((err) => {
+        console.warn("Falha ao carregar escalas:", err);
+        toast("⚠️ Não foi possível carregar os dados de escalas");
+      });
   }
 
   // ===============================================
@@ -77,6 +78,16 @@ function renderEscalas(data) {
   const tbody = document.querySelector("#tabela-escalas tbody");
   if (!tbody) return;
 
+  if (!data.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" class="text-center py-4 text-gray-400">
+          Nenhuma escala encontrada.
+        </td>
+      </tr>`;
+    return;
+  }
+
   tbody.innerHTML = data
     .map(
       (row) => `
@@ -84,7 +95,11 @@ function renderEscalas(data) {
       <td class="px-4 py-2">${row.servidor}</td>
       <td class="px-4 py-2">${row.turno}</td>
       <td class="px-4 py-2 text-${
-        row.status === "Ativo" ? "green" : "yellow"
+        row.status === "Ativo"
+          ? "green"
+          : row.status === "Substituto"
+          ? "yellow"
+          : "red"
       }-600 font-semibold">${row.status}</td>
       <td class="px-4 py-2 text-right">
         <button class="btn-outline text-sm">Editar</button>
@@ -119,4 +134,3 @@ document.addEventListener("DOMContentLoaded", () => {
 window.addEventListener("pageshow", () => {
   document.body.classList.remove("fade-out");
 });
-    
