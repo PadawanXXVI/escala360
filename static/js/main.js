@@ -57,7 +57,50 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ===============================================
-  // 📈 4. Placeholder para gráficos (Plotly, futuramente)
+  // 👥 4. Cadastro e listagem de funcionários
+  // ===============================================
+  if (window.location.pathname === "/usuarios") {
+    const form = document.querySelector("#form-funcionario");
+    const tbody = document.querySelector("#tabela-funcionarios tbody");
+
+    // Carrega lista inicial
+    fetch("/usuarios/api")
+      .then((r) => r.json())
+      .then((data) => renderFuncionarios(data))
+      .catch(() => toast("⚠️ Não foi possível carregar os funcionários."));
+
+    // Envio do formulário
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const payload = {
+        nome: form.nome.value,
+        cargo: form.cargo.value,
+        email: form.email.value,
+        ativo: form.ativo.checked,
+      };
+
+      fetch("/usuarios/api", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+        .then((r) => r.json())
+        .then((res) => {
+          if (res.ok) {
+            toast("✅ Funcionário cadastrado com sucesso!");
+            form.reset();
+            return fetch("/usuarios/api")
+              .then((r) => r.json())
+              .then(renderFuncionarios);
+          }
+          throw new Error(res.error || "Erro desconhecido");
+        })
+        .catch((err) => toast("❌ Erro ao cadastrar: " + err.message));
+    });
+  }
+
+  // ===============================================
+  // 📈 5. Placeholder para gráficos (Plotly, futuramente)
   // ===============================================
   if (window.location.pathname === "/") {
     const chartContainer = document.getElementById("chart-bi");
@@ -105,6 +148,38 @@ function renderEscalas(data) {
         <button class="btn-outline text-sm">Editar</button>
       </td>
     </tr>`
+    )
+    .join("");
+}
+
+// =====================================================
+// 🧩 Função auxiliar: renderiza tabela de funcionários
+// =====================================================
+function renderFuncionarios(data) {
+  const tbody = document.querySelector("#tabela-funcionarios tbody");
+  if (!tbody) return;
+
+  if (!data.length) {
+    tbody.innerHTML =
+      '<tr><td colspan="4" class="text-center py-4 text-gray-400">Nenhum funcionário encontrado.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = data
+    .map(
+      (f) => `
+      <tr class="hover:bg-indigo-50 dark:hover:bg-indigo-900 transition">
+        <td class="px-4 py-2">${f.nome}</td>
+        <td class="px-4 py-2">${f.cargo}</td>
+        <td class="px-4 py-2">${f.email}</td>
+        <td class="px-4 py-2 text-center">
+          <span class="px-2 py-1 rounded-full text-xs font-semibold ${
+            f.ativo
+              ? "bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-200"
+              : "bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-200"
+          }">${f.ativo ? "Ativo" : "Inativo"}</span>
+        </td>
+      </tr>`
     )
     .join("");
 }
