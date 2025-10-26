@@ -232,6 +232,48 @@ function renderTurnos(data) {
 }
 
 // =====================================================
+// 📆 Cadastro e listagem de escalas
+// =====================================================
+if (window.location.pathname === "/escalas") {
+  const form = document.querySelector("#form-escala");
+  const tbody = document.querySelector("#tabela-escalas tbody");
+
+  // Carrega as escalas existentes
+  fetch("/escalas/api")
+    .then((r) => r.json())
+    .then((data) => renderEscalas(data))
+    .catch(() => toast("⚠️ Não foi possível carregar as escalas."));
+
+  // Submissão do formulário
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const payload = {
+      funcionario_id: form.funcionario_id.value,
+      turno_id: form.turno_id.value,
+      data: form.data.value,
+      status: form.status.value,
+    };
+
+    fetch("/escalas/api", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.ok) {
+          toast("✅ Escala cadastrada com sucesso!");
+          form.reset();
+          return fetch("/escalas/api").then((r) => r.json()).then(renderEscalas);
+        }
+        throw new Error(res.error || "Erro desconhecido");
+      })
+      .catch((err) => toast("❌ Erro ao cadastrar: " + err.message));
+  });
+}
+
+// =====================================================
 // 🔔 Toasts e animações globais
 // =====================================================
 function toast(message) {

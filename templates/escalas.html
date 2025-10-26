@@ -1,109 +1,83 @@
 {% extends "base.html" %}
+{% block title %}Gestão de Escalas – Escala360{% endblock %}
+
 {% block content %}
-
-<!-- ============================================
-     ESCALA360 – Gestão de Escalas e Plantões
-     Autor: Anderson de Matos Guimarães
-     Data: 24/10/2025
-   ============================================ -->
-
-<section>
-  <!-- Cabeçalho -->
-  <header class="mb-8">
-    <h1 class="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mb-2">
-      Gestão de Escalas e Substituições
+<section class="page-section fade-in max-w-5xl mx-auto my-8">
+  <header class="mb-6">
+    <h1 class="text-2xl font-semibold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
+      <i class="fas fa-calendar-alt"></i> Gestão de Escalas
     </h1>
-    <p class="text-gray-600 dark:text-gray-300 max-w-3xl">
-      Consulte a escala de servidores, verifique plantões vagos e gerencie substituições em andamento.
-    </p>
+    <p class="text-gray-600 dark:text-gray-400">Cadastre e visualize as escalas de trabalho.</p>
   </header>
 
-  <!-- Barra de ações -->
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
-    <div>
-      <input
-        type="text"
-        id="searchInput"
-        placeholder="Pesquisar servidor..."
-        class="w-full sm:w-72 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:border-gray-700"
-      />
-    </div>
-
-    <div class="flex gap-2">
-      <button class="btn-primary">
-        <i class="fas fa-user-plus mr-2"></i> Novo Plantão
-      </button>
-      <button class="btn-outline">
-        <i class="fas fa-sync-alt mr-2"></i> Atualizar Lista
-      </button>
-    </div>
-  </div>
-
-  <!-- Tabela principal -->
-  <div id="tabela-escalas" class="table-container card overflow-x-auto">
-    <table class="min-w-full border-collapse text-sm">
-      <thead>
-        <tr>
-          <th class="py-3 px-4 text-left text-gray-700 dark:text-gray-200">Servidor</th>
-          <th class="py-3 px-4 text-left text-gray-700 dark:text-gray-200">Turno</th>
-          <th class="py-3 px-4 text-left text-gray-700 dark:text-gray-200">Status</th>
-          <th class="py-3 px-4 text-right text-gray-700 dark:text-gray-200">Ações</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- Dados serão carregados dinamicamente via main.js -->
-        <tr>
-          <td colspan="4" class="text-center py-6 text-gray-400 dark:text-gray-500">
-            Carregando dados da escala...
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Modal de substituição (futuro uso) -->
-  <div
-    id="modalSubstituicao"
-    class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-  >
-    <div class="bg-white dark:bg-gray-800 p-6 rounded-xl w-full max-w-lg shadow-lg relative">
-      <button
-        id="closeModal"
-        class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-      >
-        <i class="fas fa-times"></i>
-      </button>
-      <h2 class="text-xl font-semibold text-indigo-600 dark:text-indigo-400 mb-4">
-        Sugerir Substituto
-      </h2>
-      <p class="text-gray-600 dark:text-gray-300 mb-4">
-        Este módulo permitirá ao sistema sugerir automaticamente o melhor servidor substituto,
-        considerando carga horária e disponibilidade.
-      </p>
-      <div class="text-right">
-        <button class="btn-primary">
-          <i class="fas fa-check mr-1"></i> Confirmar
-        </button>
+  <!-- 🧾 Formulário -->
+  <form id="form-escala" class="bg-white dark:bg-gray-800 shadow-md rounded-xl p-6 space-y-4">
+    <div class="grid md:grid-cols-4 gap-4">
+      <div>
+        <label for="funcionario_id" class="label">Funcionário</label>
+        <select id="funcionario_id" name="funcionario_id" class="input" required>
+          <option value="">Selecione...</option>
+          {% for f in funcionarios %}
+          <option value="{{ f.id }}">{{ f.nome }}</option>
+          {% endfor %}
+        </select>
       </div>
+
+      <div>
+        <label for="turno_id" class="label">Turno</label>
+        <select id="turno_id" name="turno_id" class="input" required>
+          <option value="">Selecione...</option>
+          {% for t in turnos %}
+          <option value="{{ t.id }}">{{ t.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label for="data" class="label">Data</label>
+        <input type="date" id="data" name="data" class="input" required />
+      </div>
+
+      <div>
+        <label for="status" class="label">Status</label>
+        <select id="status" name="status" class="input">
+          <option value="Ativo">Ativo</option>
+          <option value="Substituto">Substituto</option>
+          <option value="Vago">Vago</option>
+        </select>
+      </div>
+    </div>
+    <div class="flex justify-end pt-4">
+      <button type="submit" class="btn-primary">
+        <i class="fas fa-save"></i> Salvar Escala
+      </button>
+    </div>
+  </form>
+
+  <!-- 📋 Tabela -->
+  <div class="mt-10">
+    <h2 class="text-lg font-semibold mb-3 text-gray-700 dark:text-gray-300">
+      Escalas cadastradas
+    </h2>
+    <div class="overflow-x-auto rounded-xl shadow-md">
+      <table id="tabela-escalas" class="w-full text-sm">
+        <thead class="bg-indigo-600 text-white">
+          <tr>
+            <th class="px-4 py-2 text-left">Funcionário</th>
+            <th class="px-4 py-2 text-left">Turno</th>
+            <th class="px-4 py-2 text-center">Data</th>
+            <th class="px-4 py-2 text-center">Status</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+          <tr>
+            <td colspan="4" class="text-center py-4 text-gray-400">
+              Nenhuma escala cadastrada.
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </section>
-
-<!-- Script interno para filtro de pesquisa -->
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const searchInput = document.getElementById("searchInput");
-    const tabela = document.querySelector("#tabela-escalas tbody");
-
-    searchInput.addEventListener("input", () => {
-      const termo = searchInput.value.toLowerCase();
-      const linhas = tabela.querySelectorAll("tr");
-      linhas.forEach((linha) => {
-        const texto = linha.textContent.toLowerCase();
-        linha.style.display = texto.includes(termo) ? "" : "none";
-      });
-    });
-  });
-</script>
-
 {% endblock %}
