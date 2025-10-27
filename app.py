@@ -17,6 +17,7 @@ from flask import Flask, render_template, jsonify, request
 from config import Config
 from models import init_app as init_db, popular_banco_inicial
 import logging
+from datetime import datetime  # ✅ Necessário para o contexto global
 
 # =========================================================
 # 🔧 Inicialização da Aplicação Flask
@@ -49,6 +50,14 @@ from blueprints.turnos import turnos_bp
 app.register_blueprint(escalas_bp)   # /escalas/...
 app.register_blueprint(usuarios_bp)  # /usuarios/...
 app.register_blueprint(turnos_bp)    # /turnos/...
+
+# =========================================================
+# 🕓 Contexto Global (para uso de {{ now() }} no Jinja)
+# =========================================================
+@app.context_processor
+def inject_now():
+    """Permite usar {{ now() }} diretamente nos templates Jinja."""
+    return {'now': datetime.now}
 
 # =========================================================
 # 🔹 Rotas “core”
