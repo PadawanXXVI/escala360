@@ -1,56 +1,84 @@
-{% extends "base.html" %}
-{% block content %}
+<!DOCTYPE html>
+<html lang="pt-br"
+      x-data="{ darkMode: localStorage.getItem('theme') === 'dark' }"
+      x-bind:class="{ 'dark': darkMode }"
+      @load.window="darkMode = localStorage.getItem('theme') === 'dark'">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Escala360 - Sistema de gestão e visualização de escalas e produtividade" />
+  <title>{{ title if title else "Escala360" }}</title>
 
-<!-- ============================================
-     ESCALA360 – Painel de Produtividade (Home)
-     Autor: Anderson de Matos Guimarães
-     Data: 27/10/2025
-   ============================================ -->
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
 
-<section>
-  <!-- Cabeçalho -->
-  <header class="mb-8">
-    <h1 class="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mb-2">
-      Painel de Produtividade do TJSP
-    </h1>
-    <p class="text-gray-600 dark:text-gray-300 max-w-3xl">
-      Acompanhe em tempo real a alocação de plantões, substituições pendentes e desempenho das equipes.
-    </p>
+  <!-- Alpine.js -->
+  <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+  <!-- Ícones Lucide -->
+  <script src="https://unpkg.com/lucide@latest" defer></script>
+
+  <!-- Fonte Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Estilos customizados -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+
+  <style>
+    /* Animações de transição global */
+    .fade-in {
+      opacity: 0;
+      animation: fadeIn 0.4s ease-in forwards;
+    }
+    .fade-out {
+      opacity: 1;
+      animation: fadeOut 0.25s ease-out forwards;
+    }
+    @keyframes fadeIn { to { opacity: 1; } }
+    @keyframes fadeOut { to { opacity: 0; } }
+  </style>
+</head>
+
+<body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
+
+  <!-- 🔹 Navbar -->
+  <header class="navbar bg-white dark:bg-gray-800 shadow-md sticky top-0 z-50">
+    <nav class="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between" aria-label="Main navigation">
+      <div class="flex items-center space-x-3">
+        <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="Escala360" class="h-6 w-6">
+        <a href="{{ url_for('index') }}" class="text-xl font-semibold tracking-wide hover:text-indigo-600">Escala360</a>
+      </div>
+
+      <div class="hidden md:flex space-x-6 text-sm font-medium">
+        <a href="{{ url_for('index') }}" class="nav-link {{ 'nav-active' if request.path == '/' else '' }}">Painel</a>
+        <a href="{{ url_for('escalas_bp.view_escalas') }}" class="nav-link {{ 'nav-active' if request.path.startswith('/escalas') else '' }}">Escalas</a>
+        <a href="{{ url_for('usuarios_bp.view_usuarios') }}" class="nav-link {{ 'nav-active' if request.path.startswith('/usuarios') else '' }}">Usuários</a>
+        <a href="{{ url_for('turnos_bp.view_turnos') }}" class="nav-link {{ 'nav-active' if request.path.startswith('/turnos') else '' }}">Turnos</a>
+      </div>
+
+      <div class="flex items-center space-x-4">
+        <!-- Botão de tema -->
+        <button id="darkToggle" class="text-gray-600 dark:text-gray-300 hover:text-indigo-500 transition" aria-label="Alternar tema">
+          <i class="fas fa-moon"></i>
+        </button>
+      </div>
+    </nav>
   </header>
 
-  <!-- Indicadores (KPI Cards) -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-    <div class="card text-center">
-      <h3 class="text-sm text-gray-500 dark:text-gray-400 uppercase">Plantões Alocados</h3>
-      <p class="text-4xl font-bold text-indigo-600 dark:text-indigo-400 mt-2">—</p>
-      <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Últimas 24h</p>
+  <!-- 🔹 Conteúdo dinâmico -->
+  <main class="flex-1 container mx-auto px-6 py-8 fade-in">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- 🔹 Rodapé -->
+  <footer class="mt-auto">
+    <div class="max-w-7xl mx-auto py-4 px-6 text-center text-gray-500 dark:text-gray-400 text-sm">
+      © {{ now().year }} Escala360 — Desenvolvido por Anderson de Matos Guimarães
     </div>
+  </footer>
 
-    <div class="card text-center">
-      <h3 class="text-sm text-gray-500 dark:text-gray-400 uppercase">Plantões Vagos</h3>
-      <p class="text-4xl font-bold text-red-500 dark:text-red-400 mt-2">—</p>
-      <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Necessitam substituição</p>
-    </div>
-
-    <div class="card text-center">
-      <h3 class="text-sm text-gray-500 dark:text-gray-400 uppercase">Substituições Pendentes</h3>
-      <p class="text-4xl font-bold text-yellow-500 dark:text-yellow-400 mt-2">—</p>
-      <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Em análise</p>
-    </div>
-  </div>
-
-  <!-- Gráfico Plotly -->
-  <div id="grafico" class="card">
-    <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">
-      Distribuição Geral de Plantões
-    </h2>
-    <div id="chart-bi" class="min-h-[400px] flex items-center justify-center text-gray-400 dark:text-gray-500">
-      <i class="fas fa-spinner fa-spin mr-2"></i> Carregando dados do painel...
-    </div>
-  </div>
-
-  <!-- Script Plotly -->
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-</section>
-
-{% endblock %}
+  <!-- Scripts -->
+  <script src="https://kit.fontawesome.com/4b6d1b36d0.js" crossorigin="anonymous"></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
