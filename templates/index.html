@@ -1,84 +1,125 @@
-<!DOCTYPE html>
-<html lang="pt-br"
-      x-data="{ darkMode: localStorage.getItem('theme') === 'dark' }"
-      x-bind:class="{ 'dark': darkMode }"
-      @load.window="darkMode = localStorage.getItem('theme') === 'dark'">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Escala360 - Sistema de gestão e visualização de escalas e produtividade" />
-  <title>{{ title if title else "Escala360" }}</title>
+{% extends "base.html" %}
+{% block title %}Painel de Produtividade – Escala360{% endblock %}
 
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Alpine.js -->
-  <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-
-  <!-- Ícones Lucide -->
-  <script src="https://unpkg.com/lucide@latest" defer></script>
-
-  <!-- Fonte Inter -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-
-  <!-- Estilos customizados -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
-
-  <style>
-    /* Animações de transição global */
-    .fade-in {
-      opacity: 0;
-      animation: fadeIn 0.4s ease-in forwards;
-    }
-    .fade-out {
-      opacity: 1;
-      animation: fadeOut 0.25s ease-out forwards;
-    }
-    @keyframes fadeIn { to { opacity: 1; } }
-    @keyframes fadeOut { to { opacity: 0; } }
-  </style>
-</head>
-
-<body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
-
-  <!-- 🔹 Navbar -->
-  <header class="navbar bg-white dark:bg-gray-800 shadow-md sticky top-0 z-50">
-    <nav class="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between" aria-label="Main navigation">
-      <div class="flex items-center space-x-3">
-        <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="Escala360" class="h-6 w-6">
-        <a href="{{ url_for('index') }}" class="text-xl font-semibold tracking-wide hover:text-indigo-600">Escala360</a>
-      </div>
-
-      <div class="hidden md:flex space-x-6 text-sm font-medium">
-        <a href="{{ url_for('index') }}" class="nav-link {{ 'nav-active' if request.path == '/' else '' }}">Painel</a>
-        <a href="{{ url_for('escalas_bp.view_escalas') }}" class="nav-link {{ 'nav-active' if request.path.startswith('/escalas') else '' }}">Escalas</a>
-        <a href="{{ url_for('usuarios_bp.view_usuarios') }}" class="nav-link {{ 'nav-active' if request.path.startswith('/usuarios') else '' }}">Usuários</a>
-        <a href="{{ url_for('turnos_bp.view_turnos') }}" class="nav-link {{ 'nav-active' if request.path.startswith('/turnos') else '' }}">Turnos</a>
-      </div>
-
-      <div class="flex items-center space-x-4">
-        <!-- Botão de tema -->
-        <button id="darkToggle" class="text-gray-600 dark:text-gray-300 hover:text-indigo-500 transition" aria-label="Alternar tema">
-          <i class="fas fa-moon"></i>
-        </button>
-      </div>
-    </nav>
+{% block content %}
+<section class="fade-in">
+  <!-- 🔹 Cabeçalho -->
+  <header class="mb-8">
+    <h1 class="text-3xl font-semibold text-indigo-700 dark:text-indigo-300 mb-2 flex items-center gap-2">
+      <i class="fas fa-chart-line"></i>
+      Painel de Produtividade
+    </h1>
+    <p class="text-gray-600 dark:text-gray-400 text-sm">
+      Visualize o desempenho das escalas, substituições e produtividade geral em tempo real.
+    </p>
   </header>
 
-  <!-- 🔹 Conteúdo dinâmico -->
-  <main class="flex-1 container mx-auto px-6 py-8 fade-in">
-    {% block content %}{% endblock %}
-  </main>
-
-  <!-- 🔹 Rodapé -->
-  <footer class="mt-auto">
-    <div class="max-w-7xl mx-auto py-4 px-6 text-center text-gray-500 dark:text-gray-400 text-sm">
-      © {{ now().year }} Escala360 — Desenvolvido por Anderson de Matos Guimarães
+  <!-- 🔹 Cards de Indicadores (KPI) -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+    <div class="card bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md hover:shadow-lg transition flex flex-col items-center">
+      <p class="text-sm text-gray-500 dark:text-gray-400">Profissionais Alocados</p>
+      <p class="text-4xl font-bold text-indigo-600 dark:text-indigo-400 mt-2">--</p>
     </div>
-  </footer>
 
-  <!-- Scripts -->
-  <script src="https://kit.fontawesome.com/4b6d1b36d0.js" crossorigin="anonymous"></script>
-  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-</body>
-</html>
+    <div class="card bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md hover:shadow-lg transition flex flex-col items-center">
+      <p class="text-sm text-gray-500 dark:text-gray-400">Plantões Vagos</p>
+      <p class="text-4xl font-bold text-red-600 dark:text-red-400 mt-2">--</p>
+    </div>
+
+    <div class="card bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md hover:shadow-lg transition flex flex-col items-center">
+      <p class="text-sm text-gray-500 dark:text-gray-400">Substituições</p>
+      <p class="text-4xl font-bold text-yellow-500 dark:text-yellow-300 mt-2">--</p>
+    </div>
+
+    <div class="card bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md hover:shadow-lg transition flex flex-col items-center">
+      <p class="text-sm text-gray-500 dark:text-gray-400">Produtividade</p>
+      <p class="text-4xl font-bold text-green-600 dark:text-green-400 mt-2">--%</p>
+    </div>
+  </div>
+
+  <!-- 🔹 Gráfico BI -->
+  <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-6">
+    <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4 flex items-center gap-2">
+      <i class="fas fa-chart-bar text-indigo-500"></i> Produtividade Diária
+    </h2>
+    <div id="chart-bi" class="w-full h-[400px]"></div>
+  </div>
+</section>
+
+<!-- 🔹 Plotly -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const chartContainer = document.getElementById("chart-bi");
+  const kpiCards = document.querySelectorAll(".card");
+
+  fetch("/escalas/api/dashboard")
+    .then((r) => r.json())
+    .then((dados) => {
+      const { kpis, grafico } = dados;
+
+      // Atualiza KPIs
+      const [alocados, vagos, substituicoes, produtividade] = [
+        kpis.alocados,
+        kpis.vagos,
+        kpis.substituicoes,
+        kpis.produtividade,
+      ];
+
+      if (kpiCards.length >= 4) {
+        kpiCards[0].querySelector("p.text-4xl").textContent = alocados;
+        kpiCards[1].querySelector("p.text-4xl").textContent = vagos;
+        kpiCards[2].querySelector("p.text-4xl").textContent = substituicoes;
+        kpiCards[3].querySelector("p.text-4xl").textContent = `${produtividade}%`;
+      }
+
+      // Gráfico Plotly
+      const data = [
+        {
+          x: grafico.dias,
+          y: grafico.alocados,
+          name: "Alocados",
+          type: "bar",
+          marker: { color: "#4f46e5" },
+        },
+        {
+          x: grafico.dias,
+          y: grafico.vagos,
+          name: "Vagos",
+          type: "bar",
+          marker: { color: "#ef4444" },
+        },
+        {
+          x: grafico.dias,
+          y: grafico.substituicoes,
+          name: "Substituições",
+          type: "bar",
+          marker: { color: "#f59e0b" },
+        },
+      ];
+
+      const layout = {
+        barmode: "group",
+        title: {
+          text: `Produtividade Semanal (${produtividade}%)`,
+          font: { color: "#6b7280", size: 18 },
+        },
+        plot_bgcolor: "transparent",
+        paper_bgcolor: "transparent",
+        font: { color: "#9ca3af" },
+        xaxis: { title: "Dias da Semana" },
+        yaxis: { title: "Quantidade" },
+        margin: { t: 50, l: 50, r: 30, b: 50 },
+      };
+
+      Plotly.newPlot("chart-bi", data, layout, { responsive: true });
+    })
+    .catch(() => {
+      chartContainer.innerHTML = `
+        <div class="text-center py-12 text-gray-500 dark:text-gray-400">
+          ⚠️ Não foi possível carregar os dados do BI.
+        </div>`;
+    });
+});
+</script>
+{% endblock %}
