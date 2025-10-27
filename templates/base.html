@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="pt-br" x-data="{ darkMode: localStorage.getItem('theme') === 'dark' }"
+<html lang="pt-br"
+      x-data="{ darkMode: localStorage.getItem('theme') === 'dark', menuOpen: false }"
       x-bind:class="{ 'dark': darkMode }"
       @load.window="darkMode = localStorage.getItem('theme') === 'dark'">
 <head>
@@ -21,79 +22,80 @@
   <script src="https://kit.fontawesome.com/4b6d1b36d0.js" crossorigin="anonymous"></script>
 
   <style>
-    :root {
-      color-scheme: light dark;
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
+    :root { color-scheme: light dark; }
 
     body {
       font-family: 'Inter', sans-serif;
       transition: background-color 0.3s, color 0.3s;
     }
 
-    /* 🔹 Navbar */
+    /* Navbar */
     .navbar {
       backdrop-filter: blur(12px);
       background-color: rgba(255, 255, 255, 0.85);
+      transition: all 0.3s ease-in-out;
     }
     .dark .navbar {
       background-color: rgba(24, 24, 27, 0.85);
     }
 
-    /* 🔹 Links de navegação */
+    /* Links de navegação */
     .nav-link {
       padding-bottom: 0.25rem;
       border-bottom: 2px solid transparent;
       transition: all 0.2s ease-in-out;
     }
-    .nav-link:hover {
-      color: #4f46e5;
-    }
-    .nav-active {
+    .nav-link:hover, .nav-active {
       color: #4f46e5;
       border-bottom-color: #4f46e5;
     }
 
-    /* 🔹 Animações */
-    .fade-in {
-      opacity: 0;
-      animation: fadeIn 0.4s ease-in forwards;
-    }
-    .fade-out {
-      opacity: 1;
-      animation: fadeOut 0.25s ease-out forwards;
-    }
+    /* Animações globais */
+    .fade-in { opacity: 0; animation: fadeIn 0.4s ease-in forwards; }
     @keyframes fadeIn { to { opacity: 1; } }
-    @keyframes fadeOut { to { opacity: 0; } }
   </style>
 </head>
 
 <body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
 
   <!-- 🔹 Navbar -->
-  <header class="navbar shadow-sm sticky top-0 z-50 border-b border-gray-100 dark:border-gray-700">
-    <nav class="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <a href="{{ url_for('index') }}" class="text-2xl font-semibold tracking-tight text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 transition">
-          Escala360
-        </a>
-      </div>
+  <header class="navbar sticky top-0 z-50 shadow-sm border-b border-gray-100 dark:border-gray-700">
+    <nav class="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between" aria-label="Main navigation">
+      <!-- Título -->
+      <a href="{{ url_for('index') }}" class="text-2xl font-semibold tracking-tight text-indigo-600 dark:text-indigo-400 hover:text-indigo-500">
+        Escala360
+      </a>
 
+      <!-- Menu Desktop -->
       <div class="hidden md:flex space-x-8 text-sm font-medium">
         <a href="{{ url_for('index') }}" class="nav-link {{ 'nav-active' if request.path == '/' else '' }}">Painel</a>
-        <a href="{{ url_for('escalas_bp.view_escalas') }}" class="nav-link {{ 'nav-active' if '/escalas' in request.path else '' }}">Escalas</a>
-        <a href="{{ url_for('usuarios_bp.view_usuarios') }}" class="nav-link {{ 'nav-active' if '/usuarios' in request.path else '' }}">Usuários</a>
-        <a href="{{ url_for('turnos_bp.view_turnos') }}" class="nav-link {{ 'nav-active' if '/turnos' in request.path else '' }}">Turnos</a>
+        <a href="{{ url_for('escalas_bp.view_escalas') }}" class="nav-link {{ 'nav-active' if request.path.startswith('/escalas') else '' }}">Escalas</a>
+        <a href="{{ url_for('usuarios_bp.view_usuarios') }}" class="nav-link {{ 'nav-active' if request.path.startswith('/usuarios') else '' }}">Usuários</a>
+        <a href="{{ url_for('turnos_bp.view_turnos') }}" class="nav-link {{ 'nav-active' if request.path.startswith('/turnos') else '' }}">Turnos</a>
       </div>
 
-      <!-- 🔘 Modo escuro -->
-      <button id="darkToggle" class="text-gray-600 dark:text-gray-300 hover:text-indigo-500 transition" title="Alternar tema">
-        <i class="fas fa-adjust"></i>
-      </button>
+      <!-- Ações -->
+      <div class="flex items-center space-x-4">
+        <!-- Botão de tema -->
+        <button id="darkToggle" class="text-gray-600 dark:text-gray-300 hover:text-indigo-500 transition" aria-label="Alternar tema">
+          <i class="fas fa-adjust"></i>
+        </button>
+
+        <!-- Menu Mobile -->
+        <button class="md:hidden text-gray-600 dark:text-gray-300 hover:text-indigo-500" @click="menuOpen = !menuOpen" aria-label="Menu">
+          <i class="fas fa-bars"></i>
+        </button>
+      </div>
     </nav>
+
+    <!-- Dropdown Mobile -->
+    <div x-show="menuOpen" x-transition
+         class="md:hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-6 py-4 space-y-2">
+      <a href="{{ url_for('index') }}" class="block nav-link {{ 'nav-active' if request.path == '/' else '' }}">Painel</a>
+      <a href="{{ url_for('escalas_bp.view_escalas') }}" class="block nav-link {{ 'nav-active' if request.path.startswith('/escalas') else '' }}">Escalas</a>
+      <a href="{{ url_for('usuarios_bp.view_usuarios') }}" class="block nav-link {{ 'nav-active' if request.path.startswith('/usuarios') else '' }}">Usuários</a>
+      <a href="{{ url_for('turnos_bp.view_turnos') }}" class="block nav-link {{ 'nav-active' if request.path.startswith('/turnos') else '' }}">Turnos</a>
+    </div>
   </header>
 
   <!-- 🔹 Conteúdo dinâmico -->
@@ -108,7 +110,6 @@
     </div>
   </footer>
 
-  <!-- JS principal -->
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>
