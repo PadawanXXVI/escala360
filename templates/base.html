@@ -11,20 +11,53 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Alpine.js (interatividade leve) -->
+  <!-- Alpine.js -->
   <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
-  <!-- Ícones Lucide -->
-  <script src="https://unpkg.com/lucide@latest" defer></script>
-
-  <!-- Fonte Inter (Google Fonts) -->
+  <!-- Fonte Inter -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
-  <!-- Estilos customizados -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+  <!-- Ícones -->
+  <script src="https://kit.fontawesome.com/4b6d1b36d0.js" crossorigin="anonymous"></script>
 
   <style>
-    /* Animações de transição global */
+    :root {
+      color-scheme: light dark;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    /* 🔹 Navbar */
+    .navbar {
+      backdrop-filter: blur(12px);
+      background-color: rgba(255, 255, 255, 0.85);
+    }
+    .dark .navbar {
+      background-color: rgba(24, 24, 27, 0.85);
+    }
+
+    /* 🔹 Links de navegação */
+    .nav-link {
+      padding-bottom: 0.25rem;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s ease-in-out;
+    }
+    .nav-link:hover {
+      color: #4f46e5;
+    }
+    .nav-active {
+      color: #4f46e5;
+      border-bottom-color: #4f46e5;
+    }
+
+    /* 🔹 Animações */
     .fade-in {
       opacity: 0;
       animation: fadeIn 0.4s ease-in forwards;
@@ -33,53 +66,49 @@
       opacity: 1;
       animation: fadeOut 0.25s ease-out forwards;
     }
-    @keyframes fadeIn {
-      to { opacity: 1; }
-    }
-    @keyframes fadeOut {
-      to { opacity: 0; }
-    }
+    @keyframes fadeIn { to { opacity: 1; } }
+    @keyframes fadeOut { to { opacity: 0; } }
   </style>
 </head>
 
 <body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
 
   <!-- 🔹 Navbar -->
-  <header class="navbar bg-white dark:bg-gray-800 shadow-md sticky top-0 z-50">
+  <header class="navbar shadow-sm sticky top-0 z-50 border-b border-gray-100 dark:border-gray-700">
     <nav class="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
       <div class="flex items-center space-x-3">
-        <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="Escala360" class="h-6 w-6">
-        <a href="{{ url_for('index') }}" class="text-xl font-semibold tracking-wide hover:text-indigo-600">Escala360</a>
+        <a href="{{ url_for('index') }}" class="text-2xl font-semibold tracking-tight text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 transition">
+          Escala360
+        </a>
       </div>
 
-      <div class="hidden md:flex space-x-6 text-sm font-medium">
+      <div class="hidden md:flex space-x-8 text-sm font-medium">
         <a href="{{ url_for('index') }}" class="nav-link {{ 'nav-active' if request.path == '/' else '' }}">Painel</a>
-        <a href="{{ url_for('escalas') }}" class="nav-link {{ 'nav-active' if request.path == '/escalas' else '' }}">Escalas</a>
+        <a href="{{ url_for('escalas_bp.view_escalas') }}" class="nav-link {{ 'nav-active' if '/escalas' in request.path else '' }}">Escalas</a>
+        <a href="{{ url_for('usuarios_bp.view_usuarios') }}" class="nav-link {{ 'nav-active' if '/usuarios' in request.path else '' }}">Usuários</a>
+        <a href="{{ url_for('turnos_bp.view_turnos') }}" class="nav-link {{ 'nav-active' if '/turnos' in request.path else '' }}">Turnos</a>
       </div>
 
-      <div class="flex items-center space-x-4">
-        <!-- Botão de tema -->
-        <button id="darkToggle" class="text-gray-600 dark:text-gray-300 hover:text-indigo-500 transition">
-          <i class="fas fa-moon"></i>
-        </button>
-      </div>
+      <!-- 🔘 Modo escuro -->
+      <button id="darkToggle" class="text-gray-600 dark:text-gray-300 hover:text-indigo-500 transition" title="Alternar tema">
+        <i class="fas fa-adjust"></i>
+      </button>
     </nav>
   </header>
 
   <!-- 🔹 Conteúdo dinâmico -->
-  <main class="flex-1 container mx-auto px-6 py-8 fade-in">
+  <main class="flex-1 max-w-7xl mx-auto px-6 py-8 fade-in">
     {% block content %}{% endblock %}
   </main>
 
   <!-- 🔹 Rodapé -->
-  <footer class="mt-auto">
+  <footer class="mt-auto border-t border-gray-100 dark:border-gray-800">
     <div class="max-w-7xl mx-auto py-4 px-6 text-center text-gray-500 dark:text-gray-400 text-sm">
       © {{ now().year }} Escala360 — Desenvolvido por Anderson de Matos Guimarães
     </div>
   </footer>
 
-  <!-- Scripts -->
-  <script src="https://kit.fontawesome.com/4b6d1b36d0.js" crossorigin="anonymous"></script>
+  <!-- JS principal -->
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>
