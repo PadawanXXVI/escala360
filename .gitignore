@@ -10,6 +10,7 @@ __pycache__/
 *.pyd
 *.db
 *.sqlite3
+escala360.db
 
 # 🧱 Ambientes virtuais
 .venv/
@@ -47,6 +48,7 @@ desktop.ini
 
 # 🧪 Cache de testes e notebooks
 .ipynb_checkpoints/
+*.ipynb
 .pytest_cache/
 .cache/
 
