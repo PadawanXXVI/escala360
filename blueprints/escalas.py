@@ -2,20 +2,28 @@
 ===========================================================
 ESCALA360 - Blueprint: Escalas
 Autor: Anderson de Matos Guimarães
-Data: 27/10/2025
+Data: 31/10/2025
 ===========================================================
 
 Descrição:
-Módulo responsável por gerenciar as escalas de trabalho.
-Inclui as rotas para CRUD completo e endpoints em JSON
-para integração com o front-end (AJAX e BI).
+Gerencia a alocação de profissionais em plantões,
+considerando as regras de negócio da Prova Prática:
+
+1. Cada profissional possui carga horária máxima semanal (ex: 40h).
+2. Um plantão não pode ter dois profissionais no mesmo horário.
+3. Substituições só podem ocorrer com 12h de antecedência (regra no módulo substituicoes).
+4. Toda alteração gera registro na tabela 'auditoria'.
+
+Base de dados: Tabela 'escalas' (ver escala360.sql)
+Campos: id, id_plantao, id_profissional, status, data_alocacao
 ===========================================================
 """
 
 from flask import Blueprint, render_template, request, jsonify, current_app
-from models import db, Escala, Funcionario, Turno
+from models import db, Escala, Profissional, Plantao, Auditoria
 from datetime import datetime, timedelta
-import random
+from sqlalchemy import func
+from sqlalchemy.exc import SQLAlchemyError
 
 escalas_bp = Blueprint("escalas_bp", __name__, url_prefix="/escalas")
 
@@ -26,158 +34,249 @@ escalas_bp = Blueprint("escalas_bp", __name__, url_prefix="/escalas")
 @escalas_bp.route("/")
 def view_escalas():
     """Renderiza a página de gestão de escalas."""
-    funcionarios = Funcionario.query.all()
-    turnos = Turno.query.all()
+    profissionais = Profissional.query.filter_by(ativo=True).all()
+    plantoes = Plantao.query.order_by(Plantao.data.asc()).all()
     current_app.logger.info("🗓️ Acesso à página de gestão de escalas.")
     return render_template(
         "escalas.html",
         title="Gestão de Escalas",
-        funcionarios=funcionarios,
-        turnos=turnos
+        profissionais=profissionais,
+        plantoes=plantoes,
     )
 
 
 # =========================================================
-# 📋 API - Listar escalas
+# 📋 Listar Escalas (GET)
 # =========================================================
 @escalas_bp.get("/api")
 def listar_escalas():
-    """Retorna todas as escalas registradas no banco."""
-    escalas = Escala.query.all()
-    data = [
-        {
-            "id": e.id,
-            "data": e.data.strftime("%Y-%m-%d"),
-            "funcionario": e.funcionario.nome if e.funcionario else "—",
-            "funcionario_id": e.funcionario.id if e.funcionario else None,
-            "turno": e.turno.nome if e.turno else "—",
-            "turno_id": e.turno.id if e.turno else None,
-            "status": e.status,
-        }
-        for e in escalas
-    ]
-    return jsonify(data), 200
+    """Retorna todas as escalas com JOIN de profissional e plantão."""
+    try:
+        escalas = (
+            db.session.query(Escala, Profissional, Plantao)
+            .join(Profissional, Escala.id_profissional == Profissional.id)
+            .join(Plantao, Escala.id_plantao == Plantao.id)
+            .all()
+        )
+
+        data = [
+            {
+                "id": e.Escala.id,
+                "profissional": e.Profissional.nome,
+                "cargo": e.Profissional.cargo,
+                "data": e.Plantao.data.strftime("%Y-%m-%d"),
+                "hora_inicio": e.Plantao.hora_inicio.strftime("%H:%M"),
+                "hora_fim": e.Plantao.hora_fim.strftime("%H:%M"),
+                "status": e.Escala.status,
+            }
+            for e in escalas
+        ]
+
+        return jsonify(data), 200
+
+    except SQLAlchemyError as e:
+        current_app.logger.error(f"❌ Erro ao listar escalas: {e}")
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 
 # =========================================================
-# 🆕 API - Criar escala
+# 🆕 Criar Escala (POST)
 # =========================================================
 @escalas_bp.post("/api")
 def criar_escala():
-    """Cria uma nova escala de trabalho."""
+    """
+    Cria uma nova escala com validação de conflito e carga horária.
+    Exemplo de payload:
+    {
+        "id_profissional": 1,
+        "id_plantao": 5,
+        "status": "ativo"
+    }
+    """
     payload = request.get_json(silent=True) or {}
-    try:
-        funcionario_id = payload.get("funcionario_id")
-        turno_id = payload.get("turno_id")
-        data_str = payload.get("data")
-        status = payload.get("status", "Ativo")
 
-        if not (funcionario_id and turno_id and data_str):
+    try:
+        id_profissional = payload.get("id_profissional")
+        id_plantao = payload.get("id_plantao")
+        status = payload.get("status", "ativo")
+
+        if not (id_profissional and id_plantao):
             return jsonify({"ok": False, "error": "Campos obrigatórios ausentes."}), 400
 
-        data = datetime.strptime(data_str, "%Y-%m-%d").date()
+        plantao = Plantao.query.get_or_404(id_plantao)
+        profissional = Profissional.query.get_or_404(id_profissional)
 
-        nova = Escala(
-            funcionario_id=funcionario_id,
-            turno_id=turno_id,
-            data=data,
-            status=status,
+        # 1️⃣ Regra: evitar dois profissionais no mesmo plantão
+        conflito = Escala.query.filter_by(id_plantao=id_plantao).first()
+        if conflito:
+            return jsonify(
+                {"ok": False, "error": "Este plantão já possui um profissional alocado."}
+            ), 400
+
+        # 2️⃣ Regra: verificar carga horária semanal (máx. 40h)
+        semana_ini = plantao.data - timedelta(days=plantao.data.weekday())
+        semana_fim = semana_ini + timedelta(days=6)
+        horas_semana = (
+            db.session.query(func.sum(func.strftime("%H", Plantao.hora_fim) - func.strftime("%H", Plantao.hora_inicio)))
+            .join(Escala, Escala.id_plantao == Plantao.id)
+            .filter(Escala.id_profissional == id_profissional)
+            .filter(Plantao.data.between(semana_ini, semana_fim))
+            .scalar()
         )
+
+        horas_semana = horas_semana or 0
+        duracao_plantao = (
+            datetime.combine(datetime.min, plantao.hora_fim)
+            - datetime.combine(datetime.min, plantao.hora_inicio)
+        ).seconds / 3600
+
+        if horas_semana + duracao_plantao > 40:
+            return jsonify(
+                {"ok": False, "error": "Carga horária semanal excedida (máx. 40h)."}
+            ), 400
+
+        # 3️⃣ Criação da escala
+        nova = Escala(
+            id_plantao=id_plantao,
+            id_profissional=id_profissional,
+            status=status,
+            data_alocacao=datetime.now(),
+        )
+
         db.session.add(nova)
         db.session.commit()
 
-        current_app.logger.info(f"✅ Escala criada: {nova.id} ({status})")
+        # 4️⃣ Registrar auditoria
+        log = Auditoria(
+            entidade="escala",
+            id_entidade=nova.id,
+            acao="criado",
+            usuario="sistema",
+            data_hora=datetime.now(),
+        )
+        db.session.add(log)
+        db.session.commit()
+
+        current_app.logger.info(f"✅ Escala criada: {nova.id}")
         return jsonify({"ok": True, "id": nova.id}), 201
 
-    except Exception as e:
+    except SQLAlchemyError as e:
         db.session.rollback()
         current_app.logger.error(f"❌ Erro ao criar escala: {e}")
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
 # =========================================================
-# ✏️ API - Atualizar escala
+# ✏️ Atualizar Escala (PUT)
 # =========================================================
 @escalas_bp.put("/api/<int:id>")
 def atualizar_escala(id):
-    """Atualiza uma escala existente."""
+    """Atualiza o status ou o profissional de uma escala."""
     payload = request.get_json(silent=True) or {}
     try:
         escala = Escala.query.get_or_404(id)
 
-        if "funcionario_id" in payload:
-            escala.funcionario_id = payload["funcionario_id"]
-        if "turno_id" in payload:
-            escala.turno_id = payload["turno_id"]
-        if "data" in payload:
-            escala.data = datetime.strptime(payload["data"], "%Y-%m-%d").date()
+        if "id_profissional" in payload:
+            escala.id_profissional = payload["id_profissional"]
         if "status" in payload:
             escala.status = payload["status"]
 
         db.session.commit()
+
+        # Auditoria
+        log = Auditoria(
+            entidade="escala",
+            id_entidade=id,
+            acao="atualizado",
+            usuario="sistema",
+            data_hora=datetime.now(),
+        )
+        db.session.add(log)
+        db.session.commit()
+
         current_app.logger.info(f"✏️ Escala atualizada: {id}")
         return jsonify({"ok": True, "message": "Escala atualizada com sucesso."}), 200
 
-    except Exception as e:
+    except SQLAlchemyError as e:
         db.session.rollback()
         current_app.logger.error(f"❌ Erro ao atualizar escala {id}: {e}")
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
 # =========================================================
-# 🗑️ API - Excluir escala
+# 🗑️ Excluir Escala (DELETE)
 # =========================================================
 @escalas_bp.delete("/api/<int:id>")
 def excluir_escala(id):
-    """Remove uma escala do banco de dados."""
+    """Remove uma escala e registra auditoria."""
     try:
         escala = Escala.query.get_or_404(id)
         db.session.delete(escala)
         db.session.commit()
+
+        log = Auditoria(
+            entidade="escala",
+            id_entidade=id,
+            acao="excluido",
+            usuario="sistema",
+            data_hora=datetime.now(),
+        )
+        db.session.add(log)
+        db.session.commit()
+
         current_app.logger.warning(f"🗑️ Escala excluída: {id}")
         return jsonify({"ok": True, "message": "Escala excluída com sucesso."}), 200
 
-    except Exception as e:
+    except SQLAlchemyError as e:
         db.session.rollback()
         current_app.logger.error(f"❌ Erro ao excluir escala {id}: {e}")
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
 # =========================================================
-# 📊 API - Dashboard (BI)
+# 📊 Relatórios (Consultas da Prova)
 # =========================================================
-@escalas_bp.get("/api/dashboard")
-def dashboard_bi():
-    """
-    Retorna dados simulados de produtividade para o painel BI.
-    Essa simulação gera 7 dias de dados para o gráfico Plotly.
-    """
-    hoje = datetime.now().date()
-    dias = [(hoje - timedelta(days=i)).strftime("%d/%m") for i in range(6, -1, -1)]
+@escalas_bp.get("/api/relatorios")
+def relatorios():
+    """Executa consultas exigidas na prova."""
+    try:
+        # 1️⃣ Profissionais que atingiram/ultrapassaram 40h semanais
+        query1 = """
+        SELECT p.nome, SUM((julianday(pl.hora_fim) - julianday(pl.hora_inicio)) * 24) AS horas
+        FROM profissionais p
+        JOIN escalas e ON e.id_profissional = p.id
+        JOIN plantoes pl ON e.id_plantao = pl.id
+        GROUP BY p.nome
+        HAVING horas >= 40;
+        """
 
-    # Geração simulada
-    plantoes_alocados = [random.randint(90, 150) for _ in dias]
-    plantoes_vagos = [random.randint(5, 20) for _ in dias]
-    substituicoes = [random.randint(0, 10) for _ in dias]
+        # 2️⃣ Plantões sem profissional nas próximas 48h
+        query2 = """
+        SELECT pl.id, pl.data, pl.hora_inicio, pl.hora_fim
+        FROM plantoes pl
+        LEFT JOIN escalas e ON pl.id = e.id_plantao
+        WHERE e.id_plantao IS NULL
+        AND datetime(pl.data || ' ' || pl.hora_inicio) <= datetime('now', '+48 hours');
+        """
 
-    produtividade = round(
-        (plantoes_alocados[-1] / (plantoes_alocados[-1] + plantoes_vagos[-1])) * 100, 1
-    )
+        # 3️⃣ Substituições pendentes
+        query3 = """
+        SELECT s.id, s.id_escala_original, p.nome AS solicitante, ps.nome AS substituto, s.status
+        FROM substituicoes s
+        JOIN profissionais p ON s.id_profissional_solicitante = p.id
+        JOIN profissionais ps ON s.id_profissional_substituto = ps.id
+        WHERE s.status = 'pendente';
+        """
 
-    # Estrutura do BI
-    kpis = {
-        "alocados": plantoes_alocados[-1],
-        "vagos": plantoes_vagos[-1],
-        "substituicoes": substituicoes[-1],
-        "produtividade": produtividade,
-    }
+        resultados = {
+            "profissionais_excedentes": db.session.execute(query1).mappings().all(),
+            "plantoes_vagos": db.session.execute(query2).mappings().all(),
+            "substituicoes_pendentes": db.session.execute(query3).mappings().all(),
+        }
 
-    grafico = {
-        "dias": dias,
-        "alocados": plantoes_alocados,
-        "vagos": plantoes_vagos,
-        "substituicoes": substituicoes,
-    }
+        current_app.logger.info("📈 Relatórios de escalas gerados.")
+        return jsonify(resultados), 200
 
-    current_app.logger.info("📈 Dashboard BI acessado com sucesso.")
-    return jsonify({"kpis": kpis, "grafico": grafico}), 200
+    except SQLAlchemyError as e:
+        current_app.logger.error(f"❌ Erro ao gerar relatórios: {e}")
+        return jsonify({"ok": False, "error": str(e)}), 500
