@@ -14,6 +14,7 @@ com logs persistentes, tratamento de erros customizados e contexto global.
 """
 
 import os
+import sys
 import subprocess
 import logging
 from datetime import datetime
@@ -37,7 +38,8 @@ sql_file = Path("escala360.sql")
 if not db_file.exists():
     app.logger.warning(f"⚠️ Banco {db_file} não encontrado. Iniciando criação automática...")
     try:
-        subprocess.run(["python", "init_db.py"], check=True)
+        # Usa o mesmo interpretador Python do ambiente virtual (.venv)
+        subprocess.run([sys.executable, "init_db.py"], check=True)
         app.logger.info("✅ Banco de dados criado com sucesso via init_db.py.")
     except subprocess.CalledProcessError as e:
         app.logger.error(f"❌ Falha ao executar init_db.py: {e}")
