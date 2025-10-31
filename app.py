@@ -13,8 +13,11 @@ com logs persistentes, tratamento de erros customizados e contexto global.
 ===========================================================
 """
 
+import os
+import subprocess
 import logging
 from datetime import datetime
+from pathlib import Path
 from flask import Flask, render_template, jsonify, request
 from config import Config
 from models import init_app as init_db
@@ -25,7 +28,23 @@ from models import init_app as init_db
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# Inicializa o banco de dados (estrutura + conexão)
+# =========================================================
+# 💾 Inicialização automática do banco (auto-criação se faltar)
+# =========================================================
+db_file = Path(Config.DB_NAME)
+sql_file = Path("escala360.sql")
+
+if not db_file.exists():
+    app.logger.warning(f"⚠️ Banco {db_file} não encontrado. Iniciando criação automática...")
+    try:
+        subprocess.run(["python", "init_db.py"], check=True)
+        app.logger.info("✅ Banco de dados criado com sucesso via init_db.py.")
+    except subprocess.CalledProcessError as e:
+        app.logger.error(f"❌ Falha ao executar init_db.py: {e}")
+else:
+    app.logger.info("💾 Banco de dados encontrado. Nenhuma recriação necessária.")
+
+# Inicializa o ORM (SQLAlchemy)
 init_db(app)
 
 # =========================================================
