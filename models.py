@@ -2,13 +2,13 @@
 ===========================================================
 ESCALA360 - Modelos de Dados (SQLAlchemy)
 Autor: Anderson de Matos Guimarães
-Data: 26/10/2025
+Data: 31/10/2025
 ===========================================================
 
 Descrição:
 Define as entidades principais do sistema Escala360 e suas
 relações, utilizando SQLAlchemy ORM. O banco padrão é SQLite,
-mas o sistema é compatível com outros SGBDs.
+mas o sistema é compatível com MySQL e PostgreSQL.
 ===========================================================
 """
 
@@ -21,8 +21,8 @@ db = SQLAlchemy()
 # =========================================================
 # 🧩 MODELOS PRINCIPAIS
 # =========================================================
-
 class Funcionario(db.Model):
+    """Tabela de profissionais cadastrados no sistema."""
     __tablename__ = "funcionarios"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -31,13 +31,16 @@ class Funcionario(db.Model):
     email = db.Column(db.String(120), unique=True)
     ativo = db.Column(db.Boolean, default=True)
 
-    escalas = db.relationship("Escala", back_populates="funcionario", cascade="all, delete")
+    escalas = db.relationship(
+        "Escala", back_populates="funcionario", cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<Funcionario {self.nome}>"
 
 
 class Turno(db.Model):
+    """Tabela de turnos de trabalho (plantões disponíveis)."""
     __tablename__ = "turnos"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -45,13 +48,16 @@ class Turno(db.Model):
     horario_inicio = db.Column(db.Time, nullable=False)
     horario_fim = db.Column(db.Time, nullable=False)
 
-    escalas = db.relationship("Escala", back_populates="turno", cascade="all, delete")
+    escalas = db.relationship(
+        "Escala", back_populates="turno", cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<Turno {self.nome} ({self.horario_inicio}-{self.horario_fim})>"
 
 
 class Escala(db.Model):
+    """Tabela principal de escalas (vínculo funcionário-turno-data)."""
     __tablename__ = "escalas"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -62,13 +68,16 @@ class Escala(db.Model):
 
     funcionario = db.relationship("Funcionario", back_populates="escalas")
     turno = db.relationship("Turno", back_populates="escalas")
-    substituicoes = db.relationship("Substituicao", back_populates="escala", cascade="all, delete")
+    substituicoes = db.relationship(
+        "Substituicao", back_populates="escala", cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
-        return f"<Escala {self.data} - {self.funcionario_id} - {self.status}>"
+        return f"<Escala {self.data} - Func {self.funcionario_id} - {self.status}>"
 
 
 class Substituicao(db.Model):
+    """Tabela de substituições (registro de trocas de plantões)."""
     __tablename__ = "substituicoes"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -81,15 +90,17 @@ class Substituicao(db.Model):
     substituto = db.relationship("Funcionario")
 
     def __repr__(self):
-        return f"<Substituicao {self.substituto_id} - {self.motivo}>"
+        return f"<Substituicao Func {self.substituto_id} - {self.motivo}>"
 
 # =========================================================
-# 🧱 Função auxiliar
+# 🧱 Funções auxiliares
 # =========================================================
 def popular_banco_inicial(app):
+    """Cria o banco e popula dados básicos na primeira execução."""
     with app.app_context():
         db.create_all()
 
+        # Evita duplicar dados
         if not Funcionario.query.first():
             f1 = Funcionario(nome="João Silva", cargo="Técnico", email="joao@tjsp.gov.br")
             f2 = Funcionario(nome="Maria Souza", cargo="Analista", email="maria@tjsp.gov.br")
@@ -97,7 +108,7 @@ def popular_banco_inicial(app):
 
             t1 = Turno(nome="Matutino", horario_inicio=time(7, 0), horario_fim=time(13, 0))
             t2 = Turno(nome="Vespertino", horario_inicio=time(13, 0), horario_fim=time(19, 0))
-            t3 = Turno(nome="Noturno", horario_inicio=time(19, 0), horario_fim=time(1, 0))
+            t3 = Turno(nome="Noturno", horario_inicio=time(19, 0), horario_fim=time(23, 59))
 
             e1 = Escala(data=datetime(2025, 10, 26), funcionario=f1, turno=t1, status="Ativo")
             e2 = Escala(data=datetime(2025, 10, 26), funcionario=f2, turno=t2, status="Substituto")
@@ -107,11 +118,10 @@ def popular_banco_inicial(app):
             db.session.commit()
             print("✅ Banco de dados inicial populado com sucesso!")
         else:
-            print("ℹ️ Banco de dados já contém registros.")
+            print("ℹ️ Banco de dados já contém registros iniciais.")
 
-# =========================================================
-# ⚙️ Inicialização
-# =========================================================
+
 def init_app(app):
+    """Inicializa o contexto do banco na aplicação Flask."""
     db.init_app(app)
-    app.logger.info("Banco de dados inicializado (SQLAlchemy).")
+    app.logger.info(f"💾 Banco de dados inicializado em {Config.DB_ENGINE.upper()} ({Config.DB_NAME})")
