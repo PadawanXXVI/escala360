@@ -17,7 +17,7 @@ import logging
 from datetime import datetime
 from flask import Flask, render_template, jsonify, request
 from config import Config
-from models import init_app as init_db, popular_banco_inicial
+from models import init_app as init_db
 
 # =========================================================
 # 🔧 Inicialização da Aplicação Flask
@@ -25,9 +25,8 @@ from models import init_app as init_db, popular_banco_inicial
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# Inicializa e popula o banco de dados
+# Inicializa o banco de dados (estrutura + conexão)
 init_db(app)
-popular_banco_inicial(app)
 
 # =========================================================
 # 🧾 Logging e Monitoramento
@@ -35,7 +34,7 @@ popular_banco_inicial(app)
 logging.basicConfig(
     filename=Config.LOG_FILE,
     level=getattr(logging, Config.LOG_LEVEL.upper(), logging.INFO),
-    format=Config.LOG_FORMAT if hasattr(Config, "LOG_FORMAT") else "%(asctime)s [%(levelname)s] %(message)s",
+    format=getattr(Config, "LOG_FORMAT", "%(asctime)s [%(levelname)s] %(message)s"),
     datefmt="%d/%m/%Y %H:%M:%S",
 )
 app.logger.info("✅ Configurações carregadas e banco inicializado com sucesso.")
@@ -49,11 +48,11 @@ from blueprints.plantoes import plantoes_bp
 from blueprints.substituicoes import substituicoes_bp
 from blueprints.auditoria import auditoria_bp
 
-app.register_blueprint(escalas_bp)        # /escalas/...
-app.register_blueprint(profissionais_bp)  # /profissionais/...
-app.register_blueprint(plantoes_bp)       # /plantoes/...
-app.register_blueprint(substituicoes_bp)  # /substituicoes/...
-app.register_blueprint(auditoria_bp)      # /auditoria/...
+app.register_blueprint(escalas_bp)
+app.register_blueprint(profissionais_bp)
+app.register_blueprint(plantoes_bp)
+app.register_blueprint(substituicoes_bp)
+app.register_blueprint(auditoria_bp)
 
 # =========================================================
 # 🕓 Contexto Global (para {{ now() }} em templates Jinja)
