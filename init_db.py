@@ -12,19 +12,25 @@ caso o banco esteja vazio.
 ===========================================================
 """
 
+import os
+from pathlib import Path
+from sqlalchemy import text
 from app import app
 from models import db
 from config import Config
-from pathlib import Path
-import os
 
-# Caminhos
+# =========================================================
+# 📁 Caminhos principais
+# =========================================================
 BASE_DIR = Path(__file__).resolve().parent
 SQL_FILE = BASE_DIR / "escala360.sql"
 DB_FILE = BASE_DIR / Config.DB_NAME
 
+# =========================================================
+# ⚙️ Função principal
+# =========================================================
 def init_database():
-    """Cria o banco e importa o conteúdo SQL se necessário."""
+    """Cria o banco de dados e importa o script SQL se necessário."""
     with app.app_context():
         # 1️⃣ Cria o banco vazio se não existir
         if not DB_FILE.exists():
@@ -32,21 +38,35 @@ def init_database():
             db.create_all()
             print("✅ Estrutura ORM criada com sucesso.")
         else:
-            print("ℹ️ Banco já existe, verificando conteúdo...")
+            print("ℹ️ Banco já existe, verificando necessidade de importação...")
 
-        # 2️⃣ Importa o SQL inicial (se existir)
+        # 2️⃣ Importa o SQL inicial (apenas se o banco estiver vazio)
         if SQL_FILE.exists():
-            print(f"📦 Importando dados de {SQL_FILE.name}...")
-            with open(SQL_FILE, "r", encoding="utf-8") as f:
-                sql_script = f.read()
-                db.session.execute(sql_script)
+            # Verifica se o banco já contém tabelas
+            existing_tables = db.engine.table_names()
+            if existing_tables:
+                print("ℹ️ Banco já contém tabelas. Ignorando importação do SQL inicial.")
+            else:
+                print(f"📦 Importando dados de {SQL_FILE.name}...")
+                with open(SQL_FILE, "r", encoding="utf-8") as f:
+                    sql_script = f.read()
+
+                # Executa com segurança (usando text() para múltiplos comandos)
+                for statement in sql_script.split(";"):
+                    stmt = statement.strip()
+                    if stmt:
+                        db.session.execute(text(stmt))
+
                 db.session.commit()
-            print("✅ Dados importados com sucesso do arquivo escala360.sql.")
+                print("✅ Dados importados com sucesso do arquivo escala360.sql.")
         else:
             print("⚠️ Arquivo escala360.sql não encontrado. Nenhum dado inicial foi importado.")
 
-        print("💾 Banco pronto para uso.")
+        print("💾 Banco de dados pronto para uso.")
 
 
+# =========================================================
+# 🚀 Execução direta (via terminal)
+# =========================================================
 if __name__ == "__main__":
     init_database()
