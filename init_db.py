@@ -15,7 +15,7 @@ caso o banco esteja vazio. Registra logs automáticos.
 import os
 import logging
 from pathlib import Path
-from sqlalchemy import text
+from sqlalchemy import text, inspect
 from app import app
 from models import db
 from config import Config
@@ -45,6 +45,10 @@ logger = logging.getLogger(__name__)
 def init_database():
     """Cria o banco de dados e importa o script SQL se necessário."""
     with app.app_context():
+        inspector = inspect(db.engine)
+        existing_tables = inspector.get_table_names()
+
+        # 1️⃣ Criação inicial se o banco não existir
         if not DB_FILE.exists():
             print(f"📁 Criando banco de dados: {DB_FILE}")
             logger.info(f"Criando banco de dados: {DB_FILE}")
@@ -52,12 +56,11 @@ def init_database():
             print("✅ Estrutura ORM criada com sucesso.")
             logger.info("Estrutura ORM criada com sucesso.")
         else:
-            print("ℹ️ Banco já existe, verificando necessidade de importação...")
-            logger.info("Banco já existe, verificando necessidade de importação...")
+            print("ℹ️ Banco já existe. Verificando necessidade de importação...")
+            logger.info("Banco já existe. Verificando necessidade de importação...")
 
-        # 2️⃣ Importa o SQL inicial (somente se o banco estiver vazio)
+        # 2️⃣ Importa o SQL inicial apenas se o banco estiver vazio
         if SQL_FILE.exists():
-            existing_tables = db.engine.table_names()
             if existing_tables:
                 print("ℹ️ Banco já contém tabelas. Ignorando importação do SQL inicial.")
                 logger.info("Banco já contém tabelas. Nenhuma importação realizada.")
@@ -70,7 +73,11 @@ def init_database():
                 for statement in sql_script.split(";"):
                     stmt = statement.strip()
                     if stmt:
-                        db.session.execute(text(stmt))
+                        try:
+                            db.session.execute(text(stmt))
+                        except Exception as e:
+                            logger.error(f"Erro ao executar comando SQL: {stmt[:60]}... → {e}")
+                            print(f"⚠️ Erro ao executar comando SQL: {e}")
 
                 db.session.commit()
                 print("✅ Dados importados com sucesso do arquivo escala360.sql.")
