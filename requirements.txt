@@ -1,8 +1,26 @@
+# =========================================================
+# ESCALA360 - Dependências principais
+# Autor: Anderson de Matos Guimarães
+# Data: 31/10/2025
+# =========================================================
+
+# --- Flask core ---
 Flask==3.1.2
-gunicorn==23.0.0
-plotly==6.3.1
-python-dotenv==1.0.1
+Flask-SQLAlchemy==3.1.1
 Flask-Cors==4.0.1
-colorama==0.4.6          # opcional (para desenvolvimento no Windows)
-gunicorn==23.0.0         # servidor WSGI para produção
-Flask-SQLAlchemy==3.0.5   # integração com banco de dados
+python-dotenv==1.0.1
+
+# --- Visualização e BI ---
+plotly==6.3.1
+
+# --- Produção / Servidor ---
+gunicorn==23.0.0        # Servidor WSGI para produção
+
+# --- Utilitários e ambiente ---
+colorama==0.4.6         # Opcional (melhora visual do terminal no Windows)
+
+# --- Logging (embutido no Python, mas mantido para segurança de compatibilidade)
+# Nenhum pacote extra é necessário
+
+# --- Observação ---
+# Execute `pip install -r requirements.txt` para instalar todas as dependências.
