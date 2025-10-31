@@ -2,7 +2,7 @@
    ESCALA360 - Main JavaScript
    Interatividade e experiência do usuário (UX/UI)
    Autor: Anderson de Matos Guimarães
-   Data: 28/10/2025
+   Data: 31/10/2025
    ========================================================= */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ===============================================
-  // 🔄 2. Animação de transição entre páginas
+  // 🔄 2. Transição suave entre páginas
   // ===============================================
   document.querySelectorAll("a[href]").forEach((link) => {
     link.addEventListener("click", (e) => {
@@ -39,7 +39,156 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // ===============================================
-  // 📊 3. CRUD - Escalas
+  // 👥 3. CRUD - Profissionais
+  // ===============================================
+  if (window.location.pathname.includes("/profissionais")) {
+    const form = document.querySelector("#form-profissional");
+    const tbody = document.querySelector("#tabela-profissionais tbody");
+
+    if (!form || !tbody) return;
+
+    carregarProfissionais();
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const payload = {
+        nome: form.nome.value,
+        cargo: form.cargo.value,
+        email: form.email.value,
+        ativo: form.ativo.checked,
+      };
+
+      try {
+        const res = await fetch("/profissionais/api", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }).then((r) => r.json());
+
+        if (res.ok) {
+          toast("✅ Profissional cadastrado!");
+          form.reset();
+          carregarProfissionais();
+        } else throw new Error(res.error || "Erro desconhecido");
+      } catch (err) {
+        toast("❌ " + err.message);
+      }
+    });
+
+    async function carregarProfissionais() {
+      try {
+        const data = await fetch("/profissionais/api").then((r) => r.json());
+        renderProfissionais(data);
+      } catch {
+        toast("⚠️ Falha ao carregar profissionais.");
+      }
+    }
+
+    function renderProfissionais(data) {
+      if (!data.length) {
+        tbody.innerHTML =
+          '<tr><td colspan="4" class="text-center py-4 text-gray-400">Nenhum profissional cadastrado.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = data
+        .map(
+          (p) => `
+          <tr>
+            <td class="px-4 py-2">${p.nome}</td>
+            <td class="px-4 py-2">${p.cargo || "—"}</td>
+            <td class="px-4 py-2">${p.email}</td>
+            <td class="px-4 py-2 ${
+              p.ativo ? "text-green-600" : "text-red-600"
+            }">${p.ativo ? "Ativo" : "Inativo"}</td>
+          </tr>`
+        )
+        .join("");
+    }
+  }
+
+  // ===============================================
+  // 🕒 4. CRUD - Plantões
+  // ===============================================
+  if (window.location.pathname.includes("/plantoes")) {
+    const form = document.querySelector("#form-plantao");
+    const tbody = document.querySelector("#tabela-plantoes tbody");
+
+    if (!form || !tbody) return;
+
+    carregarPlantoes();
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const payload = {
+        nome: form.nome.value,
+        inicio: form.inicio.value,
+        fim: form.fim.value,
+      };
+
+      try {
+        const res = await fetch("/plantoes/api", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }).then((r) => r.json());
+
+        if (res.ok) {
+          toast("✅ Plantão cadastrado!");
+          form.reset();
+          carregarPlantoes();
+        } else throw new Error(res.error || "Erro desconhecido");
+      } catch (err) {
+        toast("❌ " + err.message);
+      }
+    });
+
+    async function carregarPlantoes() {
+      try {
+        const data = await fetch("/plantoes/api").then((r) => r.json());
+        renderPlantoes(data);
+      } catch {
+        toast("⚠️ Falha ao carregar plantões.");
+      }
+    }
+
+    function renderPlantoes(data) {
+      if (!data.length) {
+        tbody.innerHTML =
+          '<tr><td colspan="3" class="text-center py-4 text-gray-400">Nenhum plantão cadastrado.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = data
+        .map(
+          (p) => `
+          <tr>
+            <td class="px-4 py-2">${p.nome}</td>
+            <td class="px-4 py-2">${p.inicio} - ${p.fim}</td>
+            <td class="px-4 py-2 text-right">
+              <button class="btn-outline text-sm delete-btn" data-id="${p.id}">🗑️</button>
+            </td>
+          </tr>`
+        )
+        .join("");
+
+      tbody.querySelectorAll(".delete-btn").forEach((btn) =>
+        btn.addEventListener("click", () => excluirPlantao(btn.dataset.id))
+      );
+    }
+
+    async function excluirPlantao(id) {
+      if (!confirm("Deseja excluir este plantão?")) return;
+      const res = await fetch(`/plantoes/api/${id}`, { method: "DELETE" }).then((r) => r.json());
+      if (res.ok) {
+        toast("🗑️ Plantão excluído!");
+        carregarPlantoes();
+      } else toast("❌ " + (res.error || "Erro ao excluir."));
+    }
+  }
+
+  // ===============================================
+  // 📋 5. CRUD - Escalas
   // ===============================================
   if (window.location.pathname.includes("/escalas")) {
     const form = document.querySelector("#form-escala");
@@ -49,7 +198,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     carregarEscalas();
 
-    // 🔹 CREATE
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const payload = {
@@ -67,18 +215,15 @@ document.addEventListener("DOMContentLoaded", () => {
         }).then((r) => r.json());
 
         if (res.ok) {
-          toast("✅ Escala cadastrada com sucesso!");
+          toast("✅ Escala cadastrada!");
           form.reset();
           carregarEscalas();
-        } else {
-          throw new Error(res.error || "Erro desconhecido");
-        }
+        } else throw new Error(res.error || "Erro desconhecido");
       } catch (err) {
         toast("❌ " + err.message);
       }
     });
 
-    // 🔹 READ
     async function carregarEscalas() {
       try {
         const data = await fetch("/escalas/api").then((r) => r.json());
@@ -88,7 +233,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    // 🔹 Render
     function renderEscalas(data) {
       if (!data.length) {
         tbody.innerHTML =
@@ -99,7 +243,7 @@ document.addEventListener("DOMContentLoaded", () => {
       tbody.innerHTML = data
         .map(
           (row) => `
-        <tr class="hover:bg-indigo-50 dark:hover:bg-indigo-900 transition">
+        <tr>
           <td class="px-4 py-2">${row.funcionario}</td>
           <td class="px-4 py-2">${row.turno}</td>
           <td class="px-4 py-2">${row.data}</td>
@@ -110,76 +254,18 @@ document.addEventListener("DOMContentLoaded", () => {
               ? "text-yellow-600"
               : "text-red-600"
           }">${row.status}</td>
-          <td class="px-4 py-2 text-right space-x-2">
-            <button class="btn-outline text-sm edit-btn" data-id="${row.id}">✏️</button>
-            <button class="btn-outline text-sm delete-btn text-red-600" data-id="${row.id}">🗑️</button>
+          <td class="px-4 py-2 text-right">
+            <button class="btn-outline text-sm delete-btn" data-id="${row.id}">🗑️</button>
           </td>
         </tr>`
         )
         .join("");
-
-      tbody.querySelectorAll(".edit-btn").forEach((btn) =>
-        btn.addEventListener("click", () => abrirModalEdicao(btn.dataset.id))
-      );
 
       tbody.querySelectorAll(".delete-btn").forEach((btn) =>
         btn.addEventListener("click", () => excluirEscala(btn.dataset.id))
       );
     }
 
-    // 🔹 UPDATE
-    async function abrirModalEdicao(id) {
-      const escalas = await fetch("/escalas/api").then((r) => r.json());
-      const escala = escalas.find((e) => e.id == id);
-      if (!escala) return toast("⚠️ Escala não encontrada.");
-
-      const modal = document.createElement("div");
-      modal.className =
-        "fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 fade-in";
-      modal.innerHTML = `
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-96 relative">
-          <h2 class="text-lg font-semibold mb-4 text-indigo-600">Editar Escala</h2>
-          <form id="form-edit-escala">
-            <label>Data</label>
-            <input type="date" name="data" value="${escala.data}" class="w-full p-2 mb-2 rounded border dark:bg-gray-700">
-            <label>Status</label>
-            <select name="status" class="w-full p-2 mb-2 rounded border dark:bg-gray-700">
-              <option value="Ativo" ${escala.status === "Ativo" ? "selected" : ""}>Ativo</option>
-              <option value="Substituto" ${escala.status === "Substituto" ? "selected" : ""}>Substituto</option>
-              <option value="Vago" ${escala.status === "Vago" ? "selected" : ""}>Vago</option>
-            </select>
-            <div class="text-right mt-4 space-x-2">
-              <button type="button" id="cancelar-edicao" class="btn-outline">Cancelar</button>
-              <button type="submit" class="btn-outline bg-indigo-600 text-white">Salvar</button>
-            </div>
-          </form>
-        </div>
-      `;
-      document.body.appendChild(modal);
-
-      modal.querySelector("#cancelar-edicao").onclick = () => modal.remove();
-
-      modal.querySelector("#form-edit-escala").onsubmit = async (e) => {
-        e.preventDefault();
-        const payload = {
-          data: e.target.data.value,
-          status: e.target.status.value,
-        };
-        const res = await fetch(`/escalas/api/${id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }).then((r) => r.json());
-
-        if (res.ok) {
-          toast("✅ Escala atualizada!");
-          modal.remove();
-          carregarEscalas();
-        } else toast("❌ " + (res.error || "Erro ao atualizar."));
-      };
-    }
-
-    // 🔹 DELETE
     async function excluirEscala(id) {
       if (!confirm("Deseja realmente excluir esta escala?")) return;
       const res = await fetch(`/escalas/api/${id}`, { method: "DELETE" }).then((r) => r.json());
@@ -191,7 +277,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ===============================================
-  // 📈 4. Painel BI Dinâmico
+  // 📊 6. Painel BI Dinâmico
   // ===============================================
   if (window.location.pathname === "/") {
     const chartContainer = document.getElementById("chart-bi");
