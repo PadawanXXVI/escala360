@@ -7,28 +7,30 @@
     <h1 class="text-2xl font-semibold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
       <i class="fas fa-calendar-alt"></i> Gestão de Escalas
     </h1>
-    <p class="text-gray-600 dark:text-gray-400">Cadastre e visualize as escalas de trabalho.</p>
+    <p class="text-gray-600 dark:text-gray-400">
+      Cadastre, visualize e gerencie as escalas de trabalho dos profissionais.
+    </p>
   </header>
 
   <!-- 🧾 Formulário -->
   <form id="form-escala" class="bg-white dark:bg-gray-800 shadow-md rounded-xl p-6 space-y-4">
     <div class="grid md:grid-cols-4 gap-4">
       <div>
-        <label for="funcionario_id" class="label">Funcionário</label>
-        <select id="funcionario_id" name="funcionario_id" class="input" required>
+        <label for="profissional_id" class="label">Profissional</label>
+        <select id="profissional_id" name="profissional_id" class="input" required>
           <option value="">Selecione...</option>
-          {% for f in funcionarios %}
-          <option value="{{ f.id }}">{{ f.nome }}</option>
+          {% for p in profissionais %}
+          <option value="{{ p.id }}">{{ p.nome }}</option>
           {% endfor %}
         </select>
       </div>
 
       <div>
-        <label for="turno_id" class="label">Turno</label>
-        <select id="turno_id" name="turno_id" class="input" required>
+        <label for="plantao_id" class="label">Plantão</label>
+        <select id="plantao_id" name="plantao_id" class="input" required>
           <option value="">Selecione...</option>
-          {% for t in turnos %}
-          <option value="{{ t.id }}">{{ t.nome }}</option>
+          {% for pl in plantoes %}
+          <option value="{{ pl.id }}">{{ pl.nome }}</option>
           {% endfor %}
         </select>
       </div>
@@ -63,15 +65,16 @@
       <table id="tabela-escalas" class="w-full text-sm">
         <thead class="bg-indigo-600 text-white">
           <tr>
-            <th class="px-4 py-2 text-left">Funcionário</th>
-            <th class="px-4 py-2 text-left">Turno</th>
+            <th class="px-4 py-2 text-left">Profissional</th>
+            <th class="px-4 py-2 text-left">Plantão</th>
             <th class="px-4 py-2 text-center">Data</th>
             <th class="px-4 py-2 text-center">Status</th>
+            <th class="px-4 py-2 text-center">Ações</th>
           </tr>
         </thead>
         <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
           <tr>
-            <td colspan="4" class="text-center py-4 text-gray-400">
+            <td colspan="5" class="text-center py-4 text-gray-400">
               Nenhuma escala cadastrada.
             </td>
           </tr>
@@ -80,4 +83,159 @@
     </div>
   </div>
 </section>
+
+<!-- 🔧 Script inline -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("form-escala");
+  const tabela = document.querySelector("#tabela-escalas tbody");
+
+  carregarEscalas();
+
+  // ================================
+  // 🧾 Cadastrar Escala
+  // ================================
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const payload = {
+      profissional_id: form.profissional_id.value,
+      plantao_id: form.plantao_id.value,
+      data: form.data.value,
+      status: form.status.value,
+    };
+
+    try {
+      const res = await fetch("/escalas/api", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).then((r) => r.json());
+
+      if (res.ok) {
+        toast("✅ Escala cadastrada com sucesso!");
+        form.reset();
+        carregarEscalas();
+      } else {
+        toast("❌ " + (res.error || "Erro ao salvar."));
+      }
+    } catch {
+      toast("⚠️ Erro na comunicação com o servidor.");
+    }
+  });
+
+  // ================================
+  // 📋 Carregar Escalas
+  // ================================
+  async function carregarEscalas() {
+    try {
+      const data = await fetch("/escalas/api").then((r) => r.json());
+      renderEscalas(data);
+    } catch {
+      toast("⚠️ Falha ao carregar escalas.");
+    }
+  }
+
+  // ================================
+  // 🧱 Renderizar Escalas
+  // ================================
+  function renderEscalas(data) {
+    if (!data.length) {
+      tabela.innerHTML =
+        '<tr><td colspan="5" class="text-center py-4 text-gray-400">Nenhuma escala cadastrada.</td></tr>';
+      return;
+    }
+
+    tabela.innerHTML = data
+      .map(
+        (e) => `
+      <tr class="hover:bg-indigo-50 dark:hover:bg-indigo-900 transition">
+        <td class="px-4 py-2">${e.profissional || "—"}</td>
+        <td class="px-4 py-2">${e.plantao || "—"}</td>
+        <td class="px-4 py-2 text-center">${e.data}</td>
+        <td class="px-4 py-2 text-center font-semibold ${
+          e.status === "Ativo"
+            ? "text-green-600"
+            : e.status === "Substituto"
+            ? "text-yellow-600"
+            : "text-red-600"
+        }">${e.status}</td>
+        <td class="px-4 py-2 text-center space-x-2">
+          <button class="btn-outline text-xs editar" data-id="${e.id}">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button class="btn-outline text-xs excluir text-red-600" data-id="${e.id}">
+            <i class="fas fa-trash"></i>
+          </button>
+        </td>
+      </tr>`
+      )
+      .join("");
+
+    tabela.querySelectorAll(".editar").forEach((btn) =>
+      btn.addEventListener("click", () => editarEscala(btn.dataset.id))
+    );
+    tabela.querySelectorAll(".excluir").forEach((btn) =>
+      btn.addEventListener("click", () => excluirEscala(btn.dataset.id))
+    );
+  }
+
+  // ================================
+  // ✏️ Editar Escala
+  // ================================
+  async function editarEscala(id) {
+    const data = await fetch("/escalas/api").then((r) => r.json());
+    const escala = data.find((e) => e.id == id);
+    if (!escala) return toast("⚠️ Escala não encontrada.");
+
+    form.profissional_id.value = escala.profissional_id;
+    form.plantao_id.value = escala.plantao_id;
+    form.data.value = escala.data;
+    form.status.value = escala.status;
+
+    const btnSalvar = form.querySelector("button[type='submit']");
+    btnSalvar.innerHTML = '<i class="fas fa-sync"></i> Atualizar Escala';
+    btnSalvar.classList.add("bg-yellow-600");
+
+    form.onsubmit = async (ev) => {
+      ev.preventDefault();
+      const payload = {
+        profissional_id: form.profissional_id.value,
+        plantao_id: form.plantao_id.value,
+        data: form.data.value,
+        status: form.status.value,
+      };
+      const res = await fetch(`/escalas/api/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).then((r) => r.json());
+
+      if (res.ok) {
+        toast("✅ Escala atualizada!");
+        form.reset();
+        btnSalvar.innerHTML = '<i class="fas fa-save"></i> Salvar Escala';
+        btnSalvar.classList.remove("bg-yellow-600");
+        carregarEscalas();
+        form.onsubmit = null;
+      } else {
+        toast("❌ " + (res.error || "Erro ao atualizar."));
+      }
+    };
+  }
+
+  // ================================
+  // 🗑️ Excluir Escala
+  // ================================
+  async function excluirEscala(id) {
+    if (!confirm("Deseja realmente excluir esta escala?")) return;
+    const res = await fetch(`/escalas/api/${id}`, { method: "DELETE" }).then((r) => r.json());
+    if (res.ok) {
+      toast("🗑️ Escala removida!");
+      carregarEscalas();
+    } else {
+      toast("❌ " + (res.error || "Erro ao excluir."));
+    }
+  }
+});
+</script>
 {% endblock %}

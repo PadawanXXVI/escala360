@@ -6,41 +6,40 @@
   <!-- 🔹 Cabeçalho -->
   <header class="mb-8">
     <h1 class="text-3xl font-semibold text-indigo-700 dark:text-indigo-300 mb-2 flex items-center gap-2">
-      <i class="fas fa-chart-line"></i>
-      Painel de Produtividade
+      <i class="fas fa-chart-line"></i> Painel de Produtividade
     </h1>
     <p class="text-gray-600 dark:text-gray-400 text-sm">
-      Visualize o desempenho das escalas, substituições e produtividade geral em tempo real.
+      Acompanhe a produtividade geral dos profissionais, plantões e substituições da Escala360.
     </p>
   </header>
 
   <!-- 🔹 Cards de Indicadores (KPI) -->
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-    <div class="card bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md hover:shadow-lg transition flex flex-col items-center">
+    <div class="card flex flex-col items-center text-center">
       <p class="text-sm text-gray-500 dark:text-gray-400">Profissionais Alocados</p>
       <p class="text-4xl font-bold text-indigo-600 dark:text-indigo-400 mt-2">--</p>
     </div>
 
-    <div class="card bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md hover:shadow-lg transition flex flex-col items-center">
+    <div class="card flex flex-col items-center text-center">
       <p class="text-sm text-gray-500 dark:text-gray-400">Plantões Vagos</p>
       <p class="text-4xl font-bold text-red-600 dark:text-red-400 mt-2">--</p>
     </div>
 
-    <div class="card bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md hover:shadow-lg transition flex flex-col items-center">
+    <div class="card flex flex-col items-center text-center">
       <p class="text-sm text-gray-500 dark:text-gray-400">Substituições</p>
       <p class="text-4xl font-bold text-yellow-500 dark:text-yellow-300 mt-2">--</p>
     </div>
 
-    <div class="card bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md hover:shadow-lg transition flex flex-col items-center">
+    <div class="card flex flex-col items-center text-center">
       <p class="text-sm text-gray-500 dark:text-gray-400">Produtividade</p>
       <p class="text-4xl font-bold text-green-600 dark:text-green-400 mt-2">--%</p>
     </div>
   </div>
 
   <!-- 🔹 Gráfico BI -->
-  <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-6">
+  <div class="card bg-white dark:bg-gray-800 rounded-2xl shadow-md p-6">
     <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4 flex items-center gap-2">
-      <i class="fas fa-chart-bar text-indigo-500"></i> Produtividade Diária
+      <i class="fas fa-chart-bar text-indigo-500"></i> Produtividade Semanal
     </h2>
     <div id="chart-bi" class="w-full h-[400px]"></div>
   </div>
@@ -53,9 +52,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const chartContainer = document.getElementById("chart-bi");
   const kpiCards = document.querySelectorAll(".card");
 
-  fetch("/escalas/api/dashboard")
-    .then((r) => r.json())
-    .then((dados) => {
+  async function carregarDashboard() {
+    try {
+      const response = await fetch("/escalas/api/dashboard");
+      const dados = await response.json();
       const { kpis, grafico } = dados;
 
       // Atualiza KPIs
@@ -113,13 +113,16 @@ document.addEventListener("DOMContentLoaded", () => {
       };
 
       Plotly.newPlot("chart-bi", data, layout, { responsive: true });
-    })
-    .catch(() => {
+    } catch (err) {
+      console.error(err);
       chartContainer.innerHTML = `
         <div class="text-center py-12 text-gray-500 dark:text-gray-400">
           ⚠️ Não foi possível carregar os dados do BI.
         </div>`;
-    });
+    }
+  }
+
+  carregarDashboard();
 });
 </script>
 {% endblock %}

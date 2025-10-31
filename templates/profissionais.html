@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% block title %}Gestão de Profissionais – Escala360{% endblock %}
+
+{% block content %}
+<section class="page-section fade-in max-w-5xl mx-auto my-8">
+  <header class="mb-6">
+    <h1 class="text-2xl font-semibold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
+      <i class="fas fa-user-tie"></i> Gestão de Profissionais
+    </h1>
+    <p class="text-gray-600 dark:text-gray-400">
+      Cadastre, edite e gerencie os profissionais disponíveis para alocação nas escalas de trabalho.
+    </p>
+  </header>
+
+  <!-- 🧾 Formulário -->
+  <form id="form-profissional" class="bg-white dark:bg-gray-800 shadow-md rounded-xl p-6 space-y-4">
+    <input type="hidden" id="profissional_id" name="profissional_id" value="">
+
+    <div class="grid md:grid-cols-2 gap-4">
+      <div>
+        <label for="nome" class="label">Nome completo</label>
+        <input type="text" id="nome" name="nome" class="input" placeholder="Ex: João Silva" required />
+      </div>
+      <div>
+        <label for="cargo" class="label">Cargo / Função</label>
+        <input type="text" id="cargo" name="cargo" class="input" placeholder="Ex: Técnico Operacional" required />
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4">
+      <div>
+        <label for="email" class="label">E-mail</label>
+        <input type="email" id="email" name="email" class="input" placeholder="Ex: joao@empresa.com" required />
+      </div>
+      <div class="flex items-center gap-2 mt-6">
+        <input type="checkbox" id="ativo" name="ativo" checked />
+        <label for="ativo" class="text-sm text-gray-700 dark:text-gray-300">Ativo no sistema</label>
+      </div>
+    </div>
+
+    <div class="flex justify-end gap-3 pt-4">
+      <button type="reset" class="btn-outline hidden" id="btn-cancelar-edicao">
+        <i class="fas fa-times"></i> Cancelar
+      </button>
+      <button type="submit" class="btn-primary" id="btn-salvar">
+        <i class="fas fa-save"></i> Cadastrar
+      </button>
+    </div>
+  </form>
+
+  <!-- 📋 Tabela -->
+  <div class="mt-10">
+    <h2 class="text-lg font-semibold mb-3 text-gray-700 dark:text-gray-300">
+      Profissionais cadastrados
+    </h2>
+    <div class="overflow-x-auto rounded-xl shadow-md">
+      <table id="tabela-profissionais" class="w-full text-sm">
+        <thead class="bg-indigo-600 text-white">
+          <tr>
+            <th class="px-4 py-2 text-left">Nome</th>
+            <th class="px-4 py-2 text-left">Cargo</th>
+            <th class="px-4 py-2 text-left">E-mail</th>
+            <th class="px-4 py-2 text-center">Status</th>
+            <th class="px-4 py-2 text-center">Ações</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+          <tr>
+            <td colspan="5" class="text-center py-4 text-gray-400">
+              Nenhum profissional encontrado.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 🔧 Script inline (CRUD - Profissionais) -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("form-profissional");
+  const tabela = document.querySelector("#tabela-profissionais tbody");
+  const btnSalvar = document.getElementById("btn-salvar");
+  const btnCancelar = document.getElementById("btn-cancelar-edicao");
+
+  // ================================
+  // 🧾 Cadastrar ou atualizar
+  // ================================
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const id = form.profissional_id.value;
+    const payload = {
+      nome: form.nome.value,
+      cargo: form.cargo.value,
+      email: form.email.value,
+      ativo: form.ativo.checked,
+    };
+
+    const method = id ? "PUT" : "POST";
+    const url = id ? `/profissionais/api/${id}` : "/profissionais/api";
+
+    fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.ok) {
+          toast(id ? "✅ Profissional atualizado!" : "✅ Profissional cadastrado!");
+          form.reset();
+          form.profissional_id.value = "";
+          btnSalvar.innerHTML = '<i class="fas fa-save"></i> Cadastrar';
+          btnCancelar.classList.add("hidden");
+          atualizarTabela();
+        } else {
+          toast("❌ " + (res.error || "Erro desconhecido"));
+        }
+      })
+      .catch(() => toast("⚠️ Erro na comunicação com o servidor."));
+  });
+
+  // ================================
+  // ❌ Cancelar edição
+  // ================================
+  btnCancelar.addEventListener("click", () => {
+    form.reset();
+    form.profissional_id.value = "";
+    btnSalvar.innerHTML = '<i class="fas fa-save"></i> Cadastrar';
+    btnCancelar.classList.add("hidden");
+  });
+
+  // ================================
+  // 🔄 Atualizar tabela
+  // ================================
+  function atualizarTabela() {
+    fetch("/profissionais/api")
+      .then((r) => r.json())
+      .then((data) => {
+        tabela.innerHTML = data.length
+          ? data
+              .map(
+                (p) => `
+              <tr class="hover:bg-indigo-50 dark:hover:bg-indigo-900 transition">
+                <td class="px-4 py-2">${p.nome}</td>
+                <td class="px-4 py-2">${p.cargo}</td>
+                <td class="px-4 py-2">${p.email}</td>
+                <td class="px-4 py-2 text-center">
+                  <span class="px-2 py-1 rounded-full text-xs font-semibold ${
+                    p.ativo
+                      ? "bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-200"
+                      : "bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-200"
+                  }">${p.ativo ? "Ativo" : "Inativo"}</span>
+                </td>
+                <td class="px-4 py-2 text-center space-x-2">
+                  <button class="btn-outline text-xs editar" data-id="${p.id}">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn-outline text-xs excluir text-red-600" data-id="${p.id}">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </td>
+              </tr>`
+              )
+              .join("")
+          : `<tr><td colspan="5" class="text-center py-4 text-gray-400">Nenhum profissional encontrado.</td></tr>`;
+      });
+  }
+
+  // ================================
+  // ✏️ Edição / 🗑️ Exclusão
+  // ================================
+  tabela.addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    const id = btn.dataset.id;
+
+    if (btn.classList.contains("editar")) {
+      fetch("/profissionais/api")
+        .then((r) => r.json())
+        .then((data) => {
+          const p = data.find((x) => x.id == id);
+          if (p) {
+            form.profissional_id.value = p.id;
+            form.nome.value = p.nome;
+            form.cargo.value = p.cargo;
+            form.email.value = p.email;
+            form.ativo.checked = p.ativo;
+            btnSalvar.innerHTML = '<i class="fas fa-sync"></i> Atualizar';
+            btnCancelar.classList.remove("hidden");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }
+        });
+    }
+
+    if (btn.classList.contains("excluir")) {
+      if (confirm("Deseja realmente excluir este profissional?")) {
+        fetch(`/profissionais/api/${id}`, { method: "DELETE" })
+          .then((r) => r.json())
+          .then((res) => {
+            if (res.ok) {
+              toast("🗑️ Profissional removido.");
+              atualizarTabela();
+            } else {
+              toast("❌ " + (res.error || "Erro ao excluir."));
+            }
+          });
+      }
+    }
+  });
+
+  atualizarTabela();
+});
+</script>
+{% endblock %}

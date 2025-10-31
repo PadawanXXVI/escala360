@@ -6,7 +6,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Escala360 - Sistema de gestão e visualização de escalas e produtividade" />
+  <meta name="description" content="Escala360 - Sistema de gestão e visualização de escalas, plantões e produtividade" />
   <title>{{ title if title else "Escala360" }}</title>
 
   <!-- Tailwind CSS -->
@@ -73,8 +73,10 @@
       <div class="hidden md:flex space-x-8 text-sm font-medium">
         <a href="{{ url_for('index') }}" class="nav-link {{ 'nav-active' if request.path == '/' else '' }}">Painel</a>
         <a href="{{ url_for('escalas_bp.view_escalas') }}" class="nav-link {{ 'nav-active' if request.path.startswith('/escalas') else '' }}">Escalas</a>
-        <a href="{{ url_for('usuarios_bp.view_usuarios') }}" class="nav-link {{ 'nav-active' if request.path.startswith('/usuarios') else '' }}">Usuários</a>
-        <a href="{{ url_for('turnos_bp.view_turnos') }}" class="nav-link {{ 'nav-active' if request.path.startswith('/turnos') else '' }}">Turnos</a>
+        <a href="{{ url_for('profissionais_bp.view_profissionais') }}" class="nav-link {{ 'nav-active' if request.path.startswith('/profissionais') else '' }}">Profissionais</a>
+        <a href="{{ url_for('plantoes_bp.view_plantoes') }}" class="nav-link {{ 'nav-active' if request.path.startswith('/plantoes') else '' }}">Plantões</a>
+        <a href="{{ url_for('substituicoes_bp.view_substituicoes') }}" class="nav-link {{ 'nav-active' if request.path.startswith('/substituicoes') else '' }}">Substituições</a>
+        <a href="{{ url_for('auditoria_bp.view_auditoria') }}" class="nav-link {{ 'nav-active' if request.path.startswith('/auditoria') else '' }}">Auditoria</a>
       </div>
 
       <button id="darkToggle" class="text-gray-600 dark:text-gray-300 hover:text-indigo-500 transition" aria-label="Alternar tema">
@@ -95,6 +97,7 @@
     </div>
   </footer>
 
+  <!-- FontAwesome + Script principal -->
   <script src="https://kit.fontawesome.com/4b6d1b36d0.js" crossorigin="anonymous"></script>
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
