@@ -2,22 +2,22 @@
 ===========================================================
 ESCALA360 - Sistema de Gestão de Escalas e Produtividade
 Autor: Anderson de Matos Guimarães
-Data: 26/10/2025
+Data: 31/10/2025
 Framework: Flask 3.1.2
 ===========================================================
 
 Descrição:
-Aplicação web modular com Blueprints (escalas, usuários, turnos),
-integração SQLite/SQLAlchemy, rotas de status e tratamento
-de erros customizados. Inclui logs persistentes e seed inicial.
+Aplicação web modular baseada em Blueprints (escalas, profissionais,
+plantões, substituições e auditoria), integrada a SQLite/SQLAlchemy,
+com logs persistentes, tratamento de erros customizados e contexto global.
 ===========================================================
 """
 
+import logging
+from datetime import datetime
 from flask import Flask, render_template, jsonify, request
 from config import Config
 from models import init_app as init_db, popular_banco_inicial
-import logging
-from datetime import datetime  # ✅ Necessário para o contexto global
 
 # =========================================================
 # 🔧 Inicialização da Aplicação Flask
@@ -25,89 +25,96 @@ from datetime import datetime  # ✅ Necessário para o contexto global
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# Inicializa e popula o banco SQLite
+# Inicializa e popula o banco de dados
 init_db(app)
 popular_banco_inicial(app)
 
 # =========================================================
-# 🧾 Logging
+# 🧾 Logging e Monitoramento
 # =========================================================
 logging.basicConfig(
     filename=Config.LOG_FILE,
     level=getattr(logging, Config.LOG_LEVEL.upper(), logging.INFO),
-    format="%(asctime)s [%(levelname)s] %(message)s",
+    format=Config.LOG_FORMAT if hasattr(Config, "LOG_FORMAT") else "%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%d/%m/%Y %H:%M:%S",
 )
-app.logger.info("✅ Configurações carregadas. Banco inicializado.")
+app.logger.info("✅ Configurações carregadas e banco inicializado com sucesso.")
 
 # =========================================================
 # 🧩 Registro de Blueprints
 # =========================================================
 from blueprints.escalas import escalas_bp
-from blueprints.usuarios import usuarios_bp
-from blueprints.turnos import turnos_bp
+from blueprints.profissionais import profissionais_bp
+from blueprints.plantoes import plantoes_bp
+from blueprints.substituicoes import substituicoes_bp
+from blueprints.auditoria import auditoria_bp
 
-app.register_blueprint(escalas_bp)   # /escalas/...
-app.register_blueprint(usuarios_bp)  # /usuarios/...
-app.register_blueprint(turnos_bp)    # /turnos/...
+app.register_blueprint(escalas_bp)        # /escalas/...
+app.register_blueprint(profissionais_bp)  # /profissionais/...
+app.register_blueprint(plantoes_bp)       # /plantoes/...
+app.register_blueprint(substituicoes_bp)  # /substituicoes/...
+app.register_blueprint(auditoria_bp)      # /auditoria/...
 
 # =========================================================
-# 🕓 Contexto Global (para uso de {{ now() }} no Jinja)
+# 🕓 Contexto Global (para {{ now() }} em templates Jinja)
 # =========================================================
 @app.context_processor
 def inject_now():
-    """Permite usar {{ now() }} diretamente nos templates Jinja."""
-    return {'now': datetime.now}
+    """Permite usar {{ now() }} nos templates Jinja."""
+    return {"now": datetime.now}
 
 # =========================================================
-# 🔹 Rotas “core”
+# 🔹 Rotas principais (core)
 # =========================================================
 @app.get("/")
 def index():
-    """Página inicial com o painel de produtividade (KPI + gráfico Plotly)."""
-    app.logger.info("Acesso ao Painel de Produtividade (index.html)")
-    return render_template("index.html", title="Painel Escala360")
+    """Renderiza o painel de produtividade principal (KPI + BI Plotly)."""
+    app.logger.info("🟢 Acesso ao Painel de Produtividade (index.html)")
+    return render_template("index.html", title="Painel de Produtividade – Escala360")
 
 
 @app.get("/api/status")
 def status():
-    """Retorna o status da aplicação (útil para monitoramento)."""
-    app.logger.info("Verificação de status do sistema")
+    """Retorna o status geral da aplicação (monitoramento e health check)."""
+    app.logger.info("🔍 Verificação de status do sistema")
     return jsonify(
         {
             "status": "online",
             "app": Config.APP_NAME,
             "version": Config.APP_VERSION,
-            "environment": Config.FLASK_ENV,
+            "environment": getattr(Config, "FLASK_ENV", "production"),
+            "author": Config.AUTHOR,
         }
     )
 
 
 @app.get("/erro500")
 def erro_teste():
-    """Rota para simular um erro interno (testar o template 500.html)."""
-    raise Exception("Erro interno simulado para testes.")
+    """Rota de teste para disparar o template 500.html."""
+    raise Exception("Erro interno simulado para testes do template 500.html.")
 
 # =========================================================
-# ❗ Tratamento de Erros
+# ❗ Tratamento de Erros Customizados
 # =========================================================
 @app.errorhandler(404)
 def page_not_found(e):
     """Erro 404 - Página não encontrada."""
-    app.logger.warning(f"Erro 404 - Página não encontrada: {request.path}")
-    return render_template("404.html", title="Página não encontrada"), 404
+    app.logger.warning(f"⚠️ Erro 404 - Página não encontrada: {request.path}")
+    return render_template("404.html", title="Página não encontrada – Escala360"), 404
 
 
 @app.errorhandler(500)
 def internal_error(e):
     """Erro 500 - Falha interna do servidor."""
-    app.logger.error(f"Erro 500 - Falha interna: {e}")
-    return render_template("500.html", title="Erro Interno"), 500
-
+    app.logger.error(f"❌ Erro 500 - Falha interna: {e}")
+    return render_template("500.html", title="Erro interno – Escala360"), 500
 
 # =========================================================
-# 🚀 Execução Local
+# 🚀 Execução Local (modo desenvolvimento)
 # =========================================================
 if __name__ == "__main__":
-    app.logger.info("🚀 Servidor ESCALA360 iniciado em modo debug.")
+    app.logger.info(
+        f"🚀 Servidor ESCALA360 iniciado em {Config.FLASK_ENV.upper()} "
+        f"({Config.HOST}:{Config.PORT}) com debug={Config.FLASK_DEBUG}"
+    )
     app.run(debug=Config.FLASK_DEBUG, host=Config.HOST, port=Config.PORT)
