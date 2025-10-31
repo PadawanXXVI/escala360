@@ -6,122 +6,120 @@ Data: 31/10/2025
 ===========================================================
 
 Descrição:
-Define as entidades principais do sistema Escala360 e suas
-relações, utilizando SQLAlchemy ORM. O banco padrão é SQLite,
-mas o sistema é compatível com MySQL e PostgreSQL.
+Modelos compatíveis com o banco de dados oficial escala360.sql
+fornecido pelo professor. Inclui entidades:
+Profissional, Plantao, Escala, Substituicao e Auditoria.
 ===========================================================
 """
 
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime, time
+from datetime import datetime
 from config import Config
 
 db = SQLAlchemy()
 
 # =========================================================
-# 🧩 MODELOS PRINCIPAIS
+# 👥 PROFISSIONAIS
 # =========================================================
-class Funcionario(db.Model):
-    """Tabela de profissionais cadastrados no sistema."""
-    __tablename__ = "funcionarios"
+class Profissional(db.Model):
+    """Tabela de profissionais cadastrados."""
+    __tablename__ = "profissionais"
 
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(120), nullable=False)
     cargo = db.Column(db.String(80))
-    email = db.Column(db.String(120), unique=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    telefone = db.Column(db.String(20))
     ativo = db.Column(db.Boolean, default=True)
 
-    escalas = db.relationship(
-        "Escala", back_populates="funcionario", cascade="all, delete-orphan"
-    )
+    escalas = db.relationship("Escala", back_populates="profissional", cascade="all, delete-orphan")
 
     def __repr__(self):
-        return f"<Funcionario {self.nome}>"
+        return f"<Profissional {self.nome}>"
 
 
-class Turno(db.Model):
-    """Tabela de turnos de trabalho (plantões disponíveis)."""
-    __tablename__ = "turnos"
-
-    id = db.Column(db.Integer, primary_key=True)
-    nome = db.Column(db.String(50), nullable=False)
-    horario_inicio = db.Column(db.Time, nullable=False)
-    horario_fim = db.Column(db.Time, nullable=False)
-
-    escalas = db.relationship(
-        "Escala", back_populates="turno", cascade="all, delete-orphan"
-    )
-
-    def __repr__(self):
-        return f"<Turno {self.nome} ({self.horario_inicio}-{self.horario_fim})>"
-
-
-class Escala(db.Model):
-    """Tabela principal de escalas (vínculo funcionário-turno-data)."""
-    __tablename__ = "escalas"
+# =========================================================
+# 🕒 PLANTÕES
+# =========================================================
+class Plantao(db.Model):
+    """Tabela de plantões disponíveis (equivalente aos turnos)."""
+    __tablename__ = "plantoes"
 
     id = db.Column(db.Integer, primary_key=True)
     data = db.Column(db.Date, nullable=False)
-    funcionario_id = db.Column(db.Integer, db.ForeignKey("funcionarios.id"))
-    turno_id = db.Column(db.Integer, db.ForeignKey("turnos.id"))
-    status = db.Column(db.String(50), default="Ativo")
+    hora_inicio = db.Column(db.Time, nullable=False)
+    hora_fim = db.Column(db.Time, nullable=False)
+    local = db.Column(db.String(100))
+    funcao = db.Column(db.String(80))
 
-    funcionario = db.relationship("Funcionario", back_populates="escalas")
-    turno = db.relationship("Turno", back_populates="escalas")
-    substituicoes = db.relationship(
-        "Substituicao", back_populates="escala", cascade="all, delete-orphan"
-    )
+    escalas = db.relationship("Escala", back_populates="plantao", cascade="all, delete-orphan")
 
     def __repr__(self):
-        return f"<Escala {self.data} - Func {self.funcionario_id} - {self.status}>"
+        return f"<Plantao {self.data} ({self.hora_inicio}-{self.hora_fim})>"
 
 
+# =========================================================
+# 📅 ESCALAS
+# =========================================================
+class Escala(db.Model):
+    """Tabela principal: vínculo entre profissional e plantão."""
+    __tablename__ = "escalas"
+
+    id = db.Column(db.Integer, primary_key=True)
+    profissional_id = db.Column(db.Integer, db.ForeignKey("profissionais.id"), nullable=False)
+    plantao_id = db.Column(db.Integer, db.ForeignKey("plantoes.id"), nullable=False)
+    status = db.Column(db.String(50), default="Ativo")
+    observacao = db.Column(db.String(255))
+    data_registro = db.Column(db.DateTime, default=datetime.utcnow)
+
+    profissional = db.relationship("Profissional", back_populates="escalas")
+    plantao = db.relationship("Plantao", back_populates="escalas")
+    substituicoes = db.relationship("Substituicao", back_populates="escala", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<Escala Prof:{self.profissional_id} - Plantao:{self.plantao_id} - {self.status}>"
+
+
+# =========================================================
+# 🔁 SUBSTITUIÇÕES
+# =========================================================
 class Substituicao(db.Model):
-    """Tabela de substituições (registro de trocas de plantões)."""
+    """Tabela de substituições de escalas."""
     __tablename__ = "substituicoes"
 
     id = db.Column(db.Integer, primary_key=True)
-    escala_id = db.Column(db.Integer, db.ForeignKey("escalas.id"))
-    substituto_id = db.Column(db.Integer, db.ForeignKey("funcionarios.id"))
+    escala_id = db.Column(db.Integer, db.ForeignKey("escalas.id"), nullable=False)
+    substituto_id = db.Column(db.Integer, db.ForeignKey("profissionais.id"), nullable=False)
     motivo = db.Column(db.String(200))
     data_solicitacao = db.Column(db.DateTime, default=datetime.utcnow)
 
     escala = db.relationship("Escala", back_populates="substituicoes")
-    substituto = db.relationship("Funcionario")
+    substituto = db.relationship("Profissional")
 
     def __repr__(self):
-        return f"<Substituicao Func {self.substituto_id} - {self.motivo}>"
+        return f"<Substituicao Escala:{self.escala_id} -> Substituto:{self.substituto_id}>"
+
 
 # =========================================================
-# 🧱 Funções auxiliares
+# 🧾 AUDITORIA
 # =========================================================
-def popular_banco_inicial(app):
-    """Cria o banco e popula dados básicos na primeira execução."""
-    with app.app_context():
-        db.create_all()
+class Auditoria(db.Model):
+    """Tabela de registro de ações realizadas no sistema."""
+    __tablename__ = "auditoria"
 
-        # Evita duplicar dados
-        if not Funcionario.query.first():
-            f1 = Funcionario(nome="João Silva", cargo="Técnico", email="joao@tjsp.gov.br")
-            f2 = Funcionario(nome="Maria Souza", cargo="Analista", email="maria@tjsp.gov.br")
-            f3 = Funcionario(nome="Carlos Lima", cargo="Supervisor", email="carlos@tjsp.gov.br")
+    id = db.Column(db.Integer, primary_key=True)
+    acao = db.Column(db.String(255), nullable=False)
+    usuario = db.Column(db.String(100), nullable=False)
+    data_acao = db.Column(db.DateTime, default=datetime.utcnow)
 
-            t1 = Turno(nome="Matutino", horario_inicio=time(7, 0), horario_fim=time(13, 0))
-            t2 = Turno(nome="Vespertino", horario_inicio=time(13, 0), horario_fim=time(19, 0))
-            t3 = Turno(nome="Noturno", horario_inicio=time(19, 0), horario_fim=time(23, 59))
-
-            e1 = Escala(data=datetime(2025, 10, 26), funcionario=f1, turno=t1, status="Ativo")
-            e2 = Escala(data=datetime(2025, 10, 26), funcionario=f2, turno=t2, status="Substituto")
-            e3 = Escala(data=datetime(2025, 10, 26), funcionario=f3, turno=t3, status="Vago")
-
-            db.session.add_all([f1, f2, f3, t1, t2, t3, e1, e2, e3])
-            db.session.commit()
-            print("✅ Banco de dados inicial populado com sucesso!")
-        else:
-            print("ℹ️ Banco de dados já contém registros iniciais.")
+    def __repr__(self):
+        return f"<Auditoria {self.usuario}: {self.acao}>"
 
 
+# =========================================================
+# ⚙️ Inicialização do Banco
+# =========================================================
 def init_app(app):
     """Inicializa o contexto do banco na aplicação Flask."""
     db.init_app(app)
-    app.logger.info(f"💾 Banco de dados inicializado em {Config.DB_ENGINE.upper()} ({Config.DB_NAME})")
+    app.logger.info(f"💾 Banco {Config.DB_NAME} ({Config.DB_ENGINE}) inicializado com sucesso.")
