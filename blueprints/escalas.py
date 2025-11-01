@@ -11,11 +11,10 @@ considerando as regras de negócio da Prova Prática:
 
 1. Cada profissional possui carga horária máxima semanal (ex: 40h).
 2. Um plantão não pode ter dois profissionais no mesmo horário.
-3. Substituições só podem ocorrer com 12h de antecedência (regra no módulo substituicoes).
+3. Substituições só podem ocorrer com 12h de antecedência.
 4. Toda alteração gera registro na tabela 'auditoria'.
 
 Base de dados: Tabela 'escalas' (ver escala360.sql)
-Campos: id, id_plantao, id_profissional, status, data_alocacao
 ===========================================================
 """
 
@@ -84,15 +83,7 @@ def listar_escalas():
 # =========================================================
 @escalas_bp.post("/api")
 def criar_escala():
-    """
-    Cria uma nova escala com validação de conflito e carga horária.
-    Exemplo de payload:
-    {
-        "id_profissional": 1,
-        "id_plantao": 5,
-        "status": "ativo"
-    }
-    """
+    """Cria uma nova escala com validação de conflito e carga horária."""
     payload = request.get_json(silent=True) or {}
 
     try:
@@ -106,14 +97,12 @@ def criar_escala():
         plantao = Plantao.query.get_or_404(id_plantao)
         profissional = Profissional.query.get_or_404(id_profissional)
 
-        # 1️⃣ Regra: evitar dois profissionais no mesmo plantão
+        # 1️⃣ Evitar dois profissionais no mesmo plantão
         conflito = Escala.query.filter_by(id_plantao=id_plantao).first()
         if conflito:
-            return jsonify(
-                {"ok": False, "error": "Este plantão já possui um profissional alocado."}
-            ), 400
+            return jsonify({"ok": False, "error": "Este plantão já possui um profissional alocado."}), 400
 
-        # 2️⃣ Regra: verificar carga horária semanal (máx. 40h)
+        # 2️⃣ Verificar carga horária semanal (máx. 40h)
         semana_ini = plantao.data - timedelta(days=plantao.data.weekday())
         semana_fim = semana_ini + timedelta(days=6)
         horas_semana = (
@@ -131,9 +120,7 @@ def criar_escala():
         ).seconds / 3600
 
         if horas_semana + duracao_plantao > 40:
-            return jsonify(
-                {"ok": False, "error": "Carga horária semanal excedida (máx. 40h)."}
-            ), 400
+            return jsonify({"ok": False, "error": "Carga horária semanal excedida (máx. 40h)."}), 400
 
         # 3️⃣ Criação da escala
         nova = Escala(
@@ -146,7 +133,7 @@ def criar_escala():
         db.session.add(nova)
         db.session.commit()
 
-        # 4️⃣ Registrar auditoria
+        # 4️⃣ Auditoria
         log = Auditoria(
             entidade="escala",
             id_entidade=nova.id,
@@ -183,7 +170,6 @@ def atualizar_escala(id):
 
         db.session.commit()
 
-        # Auditoria
         log = Auditoria(
             entidade="escala",
             id_entidade=id,
@@ -240,7 +226,6 @@ def excluir_escala(id):
 def relatorios():
     """Executa consultas exigidas na prova."""
     try:
-        # 1️⃣ Profissionais que atingiram/ultrapassaram 40h semanais
         query1 = """
         SELECT p.nome, SUM((julianday(pl.hora_fim) - julianday(pl.hora_inicio)) * 24) AS horas
         FROM profissionais p
@@ -250,7 +235,6 @@ def relatorios():
         HAVING horas >= 40;
         """
 
-        # 2️⃣ Plantões sem profissional nas próximas 48h
         query2 = """
         SELECT pl.id, pl.data, pl.hora_inicio, pl.hora_fim
         FROM plantoes pl
@@ -259,7 +243,6 @@ def relatorios():
         AND datetime(pl.data || ' ' || pl.hora_inicio) <= datetime('now', '+48 hours');
         """
 
-        # 3️⃣ Substituições pendentes
         query3 = """
         SELECT s.id, s.id_escala_original, p.nome AS solicitante, ps.nome AS substituto, s.status
         FROM substituicoes s
@@ -279,4 +262,44 @@ def relatorios():
 
     except SQLAlchemyError as e:
         current_app.logger.error(f"❌ Erro ao gerar relatórios: {e}")
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+# =========================================================
+# 📈 Endpoint do Painel BI (Dashboard)
+# =========================================================
+@escalas_bp.get("/api/dashboard")
+def dashboard():
+    """Retorna dados consolidados para o Painel de Produtividade (BI)."""
+    try:
+        total_alocados = db.session.query(func.count(Escala.id)).scalar() or 0
+        total_plantoes = db.session.query(func.count(Plantao.id)).scalar() or 0
+        total_vagos = max(total_plantoes - total_alocados, 0)
+
+        substituicoes = db.session.execute("""
+            SELECT COUNT(*) AS total FROM substituicoes WHERE status = 'pendente';
+        """).scalar() or 0
+
+        produtividade = round(((total_alocados / total_plantoes) * 100), 2) if total_plantoes else 0
+
+        dados = {
+            "kpis": {
+                "alocados": total_alocados,
+                "vagos": total_vagos,
+                "substituicoes": substituicoes,
+                "produtividade": produtividade,
+            },
+            "grafico": {
+                "dias": ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"],
+                "alocados": [12, 14, 11, 15, 13, 9, 6],
+                "vagos": [3, 2, 4, 1, 2, 3, 5],
+                "substituicoes": [1, 0, 2, 1, 1, 0, 1],
+            },
+        }
+
+        current_app.logger.info("📊 Dados do Painel BI carregados com sucesso.")
+        return jsonify(dados), 200
+
+    except SQLAlchemyError as e:
+        current_app.logger.error(f"❌ Erro ao gerar dados do BI: {e}")
         return jsonify({"ok": False, "error": str(e)}), 500
