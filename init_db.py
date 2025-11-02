@@ -23,7 +23,7 @@ from config import Config
 # =========================================================
 # 📁 Caminhos principais
 # =========================================================
-BASE_DIR = Path(_file_).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent
 SQL_FILE = BASE_DIR / "escala360.sql"
 DB_FILE = Path(Config.DB_PATH)
 LOG_FILE = Path(Config.LOG_FILE)
@@ -38,7 +38,7 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%d/%m/%Y %H:%M:%S",
 )
-logger = logging.getLogger(_name_)
+logger = logging.getLogger(__name__)
 
 # =========================================================
 # ⚙ Função principal
@@ -103,5 +103,5 @@ def init_database():
 # =========================================================
 # 🚀 Execução direta (via terminal)
 # =========================================================
-if _name_ == "_main_":
+if __name__ == "_main_":
     init_database()
