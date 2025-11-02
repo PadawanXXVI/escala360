@@ -2,7 +2,7 @@
 ===========================================================
 ESCALA360 - Blueprint: Auditoria
 Autor: Anderson de Matos Guimarães
-Data: 31/10/2025
+Data: 02/11/2025
 ===========================================================
 
 Descrição:
@@ -21,6 +21,7 @@ from flask import Blueprint, jsonify, request, render_template, current_app
 from models import db, Auditoria
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import text
 
 auditoria_bp = Blueprint("auditoria_bp", __name__, url_prefix="/auditoria")
 
@@ -56,15 +57,17 @@ def listar_auditoria():
             query = query.filter(Auditoria.entidade.ilike(f"%{entidade}%"))
         if usuario:
             query = query.filter(Auditoria.usuario.ilike(f"%{usuario}%"))
-        if inicio and fim:
+
+        if inicio or fim:
             try:
-                data_ini = datetime.strptime(inicio, "%Y-%m-%d")
-                data_fim = datetime.strptime(fim, "%Y-%m-%d")
+                data_ini = datetime.strptime(inicio, "%Y-%m-%d") if inicio else datetime(1900, 1, 1)
+                data_fim = datetime.strptime(fim, "%Y-%m-%d") if fim else datetime.utcnow()
                 query = query.filter(Auditoria.data_hora.between(data_ini, data_fim))
             except ValueError:
                 return jsonify({"ok": False, "error": "Datas inválidas. Use o formato YYYY-MM-DD."}), 400
 
         auditorias = query.order_by(Auditoria.data_hora.desc()).all()
+
         data = [
             {
                 "id": a.id,
@@ -77,7 +80,7 @@ def listar_auditoria():
             for a in auditorias
         ]
 
-        current_app.logger.info(f"📋 {len(data)} registros de auditoria listados.")
+        current_app.logger.info(f"📋 {len(data)} registros de auditoria listados com sucesso.")
         return jsonify(data), 200
 
     except SQLAlchemyError as e:
@@ -90,20 +93,26 @@ def listar_auditoria():
 # =========================================================
 @auditoria_bp.get("/api/resumo")
 def resumo_auditoria():
-    """
-    Retorna estatísticas básicas de auditoria (contagem por entidade e ação).
-    """
+    """Retorna estatísticas básicas de auditoria (contagem por entidade e ação)."""
     try:
-        resumo = db.session.execute("""
+        resumo_query = text("""
             SELECT entidade, acao, COUNT(*) AS total
             FROM auditoria
             GROUP BY entidade, acao
             ORDER BY entidade, acao;
-        """).mappings().all()
+        """)
 
+        resumo = db.session.execute(resumo_query).mappings().all()
         total = sum([r["total"] for r in resumo])
 
-        return jsonify({"total_registros": total, "resumo": resumo}), 200
+        resposta = {
+            "total_registros": total,
+            "entidades_unicas": len(set([r["entidade"] for r in resumo])),
+            "resumo": [dict(r) for r in resumo],
+        }
+
+        current_app.logger.info(f"📊 Resumo de auditoria gerado ({total} registros totais).")
+        return jsonify(resposta), 200
 
     except SQLAlchemyError as e:
         current_app.logger.error(f"❌ Erro ao gerar resumo de auditoria: {e}")
@@ -126,6 +135,7 @@ def detalhar_auditoria(id):
             "usuario": a.usuario,
             "data_hora": a.data_hora.strftime("%Y-%m-%d %H:%M:%S"),
         }
+        current_app.logger.info(f"ℹ️ Detalhamento de auditoria retornado: ID {id}")
         return jsonify(data), 200
 
     except SQLAlchemyError as e:
