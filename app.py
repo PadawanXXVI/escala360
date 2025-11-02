@@ -20,7 +20,7 @@ from pathlib import Path
 from flask import Flask, render_template, jsonify, request
 from config import Config
 from models import init_app as init_db
-from init_db import init_database  # ✅ chamada direta, sem subprocess
+from init_database import init_database  # ✅ chamada direta, sem subprocess
 
 # =========================================================
 # 🧾 Logging - Configuração inicial
