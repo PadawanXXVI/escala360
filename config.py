@@ -1,111 +1,93 @@
 """
-==============================================
-⚙ ESCALA360 - Configuração da Aplicação Flask
-==============================================
-
-Carrega variáveis de ambiente (.env) e define
-todas as configurações principais do sistema.
-
-Compatível com SQLite e PostgreSQL.
+===========================================================
+⚙ ESCALA360 - Configuração da Aplicação Flask (PostgreSQL)
+===========================================================
 
 Autor: Anderson de Matos Guimarães
-Versão: 1.1.0
-Data: 2025-11-02
+Data: 02/11/2025
+
+Descrição:
+Carrega variáveis de ambiente do arquivo .env, define as
+configurações principais da aplicação Flask e constrói a
+string de conexão com o banco de dados PostgreSQL.
+===========================================================
 """
 
 import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# ---------------------------------------------
-# 🔹 Carregamento do .env
-# ---------------------------------------------
+
+# =========================================================
+# 📁 Diretórios principais
+# =========================================================
 BASE_DIR = Path(__file__).resolve().parent
 ENV_PATH = BASE_DIR / ".env"
+
+# Carrega o arquivo .env
 load_dotenv(dotenv_path=ENV_PATH, override=True)
 
 
-# ---------------------------------------------
-# 🔹 Classe principal de configuração
-# ---------------------------------------------
+# =========================================================
+# ⚙ Classe principal de configuração
+# =========================================================
 class Config:
-    """Configurações principais da aplicação ESCALA360."""
+    """Configurações globais da aplicação ESCALA360."""
 
-    # 🌐 Flask
+    # Flask
     FLASK_APP = os.getenv("FLASK_APP", "app.py")
     FLASK_ENV = os.getenv("FLASK_ENV", "development")
     FLASK_DEBUG = os.getenv("FLASK_DEBUG", "True").lower() == "true"
     SECRET_KEY = os.getenv("SECRET_KEY", "escala360_secretkey")
 
-    # 🌎 Servidor
+    # Servidor
     HOST = os.getenv("HOST", "127.0.0.1")
     PORT = int(os.getenv("PORT", 5050))
 
-    # 💾 Banco de Dados
-    DB_ENGINE = os.getenv("DB_ENGINE", "sqlite")
-    DB_NAME = os.getenv("DB_NAME", "escala360.db")
-    DB_USER = os.getenv("DB_USER", "")
+    # Banco de Dados
+    DB_ENGINE = os.getenv("DB_ENGINE", "postgresql")
+    DB_NAME = os.getenv("DB_NAME", "escala360")
+    DB_USER = os.getenv("DB_USER", "postgres")
     DB_PASSWORD = os.getenv("DB_PASSWORD", "")
-    DB_HOST = os.getenv("DB_HOST", "")
-    DB_PORT = os.getenv("DB_PORT", "")
+    DB_HOST = os.getenv("DB_HOST", "localhost")
+    DB_PORT = os.getenv("DB_PORT", "5432")
 
-    if DB_ENGINE == "sqlite":
-        DB_PATH = os.getenv("DB_PATH", str(BASE_DIR / "instance" / DB_NAME))
-        SQLALCHEMY_DATABASE_URI = f"sqlite:///{DB_PATH}"
-    elif DB_ENGINE == "postgresql":
-        SQLALCHEMY_DATABASE_URI = (
-            f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-        )
-    else:
-        raise ValueError(f"⚠ Banco de dados não suportado: {DB_ENGINE}")
+    # Construção dinâmica da URI de conexão
+    SQLALCHEMY_DATABASE_URI = (
+        f"{DB_ENGINE}://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    )
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # 📊 Plotly / BI
-    ENABLE_BI = os.getenv("ENABLE_BI", "true").lower() == "true"
-    PLOTLY_THEME = os.getenv("PLOTLY_THEME", "plotly_dark")
-
-    # 🧠 Metadados
-    APP_NAME = os.getenv("APP_NAME", "ESCALA360")
-    APP_VERSION = os.getenv("APP_VERSION", "1.1.0")
-    AUTHOR = os.getenv("AUTHOR", "Anderson de Matos Guimarães")
-    APP_DESCRIPTION = os.getenv(
-        "APP_DESCRIPTION", "Sistema de gestão e visualização de escalas e produtividade"
-    )
-
-    # 🧾 Logs
+    # Logs
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
     LOG_FILE = os.getenv("LOG_FILE", str(BASE_DIR / "logs" / "escala360.log"))
     LOG_FORMAT = os.getenv(
         "LOG_FORMAT", "%(asctime)s - %(levelname)s - %(message)s"
     )
 
-    # Garante diretório de logs
+    # BI / Plotly
+    ENABLE_BI = os.getenv("ENABLE_BI", "true").lower() == "true"
+    PLOTLY_THEME = os.getenv("PLOTLY_THEME", "plotly_dark")
+
+    # Metadados
+    APP_NAME = "ESCALA360"
+    APP_VERSION = "1.0.0"
+    AUTHOR = "Anderson de Matos Guimarães"
+    APP_DESCRIPTION = (
+        "Sistema de gestão e visualização de escalas e produtividade"
+    )
+
+    # Garante diretórios de logs
     Path(LOG_FILE).parent.mkdir(parents=True, exist_ok=True)
 
-    # 📬 Integrações futuras
-    ENABLE_EMAIL = os.getenv("ENABLE_EMAIL", "false").lower() == "true"
-    ENABLE_WHATSAPP = os.getenv("ENABLE_WHATSAPP", "false").lower() == "true"
 
-    # ⚙ Feature Flags
-    ENABLE_AUDIT = os.getenv("ENABLE_AUDIT", "true").lower() == "true"
-    ENABLE_SUBSTITUICOES = os.getenv("ENABLE_SUBSTITUICOES", "true").lower() == "true"
-    ENABLE_PLANTOES = os.getenv("ENABLE_PLANTOES", "true").lower() == "true"
-
-    # 🧱 Caminhos
-    BASE_DIR = BASE_DIR
-    ENV_PATH = ENV_PATH
-
-
-# ---------------------------------------------
-# 🔹 Auto-criação de diretórios necessários
-# ---------------------------------------------
+# =========================================================
+# 🧱 Criação automática de diretórios essenciais
+# =========================================================
 def ensure_directories():
-    """Garante que diretórios de logs e banco existam."""
+    """Garante a existência de pastas para logs."""
     Path(Config.LOG_FILE).parent.mkdir(parents=True, exist_ok=True)
-    if Config.DB_ENGINE == "sqlite":
-        instance_dir = Path(BASE_DIR / "instance")
-        instance_dir.mkdir(parents=True, exist_ok=True)
 
 
 ensure_directories()
