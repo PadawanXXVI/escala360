@@ -74,7 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       kpiCards.forEach((card, i) => {
         const valorEl = card.querySelector("p.text-4xl");
-        valorEl.textContent = i === 3 ? ${valores[i]}% : valores[i];
+        valorEl.textContent = i === 3 ? `${valores[i]}%` : valores[i];
       });
 
       // Gráfico Plotly
@@ -86,7 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const layout = {
         barmode: "group",
-        title: { text: Produtividade Semanal (${kpis.produtividade}%), font: { color: "#6b7280", size: 18 } },
+        title: { text: `Produtividade Semanal (${kpis.produtividade}%)`, font: { color: "#6b7280", size: 18 } },
         plot_bgcolor: "transparent",
         paper_bgcolor: "transparent",
         font: { color: "#9ca3af" },
