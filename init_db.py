@@ -23,10 +23,10 @@ from config import Config
 # =========================================================
 # 📁 Caminhos principais
 # =========================================================
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(_file_).resolve().parent
 SQL_FILE = BASE_DIR / "escala360.sql"
-DB_FILE = Path(Config.DB_PATH)         # ✅ Correção: usa o caminho absoluto da Config
-LOG_FILE = Path(Config.LOG_FILE)       # ✅ Correção: usa o log configurado
+DB_FILE = Path(Config.DB_PATH)
+LOG_FILE = Path(Config.LOG_FILE)
 
 # =========================================================
 # 🧾 Logging
@@ -38,16 +38,23 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%d/%m/%Y %H:%M:%S",
 )
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(_name_)
 
 # =========================================================
-# ⚙️ Função principal
+# ⚙ Função principal
 # =========================================================
 def init_database():
     """Cria o banco de dados e importa o script SQL se necessário."""
     with app.app_context():
         inspector = inspect(db.engine)
-        existing_tables = inspector.get_table_names()
+
+        # ⚠ Obter tabelas existentes só se o banco existir
+        existing_tables = []
+        if DB_FILE.exists():
+            try:
+                existing_tables = inspector.get_table_names()
+            except Exception:
+                existing_tables = []
 
         # 1️⃣ Criação inicial se o banco não existir
         if not DB_FILE.exists():
@@ -57,34 +64,36 @@ def init_database():
             print("✅ Estrutura ORM criada com sucesso.")
             logger.info("Estrutura ORM criada com sucesso.")
         else:
-            print(f"ℹ️ Banco já existe em {DB_FILE}. Verificando necessidade de importação...")
+            print(f"ℹ Banco já existe em {DB_FILE}. Verificando necessidade de importação...")
             logger.info(f"Banco já existe em {DB_FILE}. Verificando necessidade de importação...")
 
         # 2️⃣ Importa o SQL inicial apenas se o banco estiver vazio
         if SQL_FILE.exists():
             if existing_tables:
-                print("ℹ️ Banco já contém tabelas. Ignorando importação do SQL inicial.")
+                print("ℹ Banco já contém tabelas. Ignorando importação do SQL inicial.")
                 logger.info("Banco já contém tabelas. Nenhuma importação realizada.")
             else:
                 print(f"📦 Importando dados de {SQL_FILE.name}...")
                 logger.info(f"Iniciando importação de {SQL_FILE.name}...")
+
                 with open(SQL_FILE, "r", encoding="utf-8") as f:
                     sql_script = f.read()
 
+                # Divide o script e executa apenas comandos válidos
                 for statement in sql_script.split(";"):
                     stmt = statement.strip()
                     if stmt:
                         try:
                             db.session.execute(text(stmt))
                         except Exception as e:
-                            logger.error(f"Erro ao executar comando SQL: {stmt[:60]}... → {e}")
-                            print(f"⚠️ Erro ao executar comando SQL: {e}")
+                            logger.error(f"Erro ao executar comando SQL: {stmt[:80]}... → {e}")
+                            print(f"⚠ Erro ao executar comando SQL: {e}")
 
                 db.session.commit()
                 print("✅ Dados importados com sucesso do arquivo escala360.sql.")
                 logger.info("Dados importados com sucesso do arquivo escala360.sql.")
         else:
-            print("⚠️ Arquivo escala360.sql não encontrado. Nenhum dado inicial foi importado.")
+            print("⚠ Arquivo escala360.sql não encontrado. Nenhum dado inicial foi importado.")
             logger.warning("Arquivo escala360.sql não encontrado.")
 
         print("💾 Banco de dados pronto para uso.")
@@ -94,5 +103,5 @@ def init_database():
 # =========================================================
 # 🚀 Execução direta (via terminal)
 # =========================================================
-if __name__ == "__main__":
+if _name_ == "_main_":
     init_database()
