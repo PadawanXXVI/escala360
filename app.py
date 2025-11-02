@@ -23,6 +23,7 @@ from flask import Flask, render_template, jsonify, request
 from config import Config
 from models import init_app as init_db
 
+
 # =========================================================
 # 🔧 Inicialização da Aplicação Flask
 # =========================================================
@@ -32,7 +33,7 @@ app.config.from_object(Config)
 # =========================================================
 # 💾 Inicialização automática do banco (auto-criação se faltar)
 # =========================================================
-db_file = Path(Config.DB_NAME)
+db_file = Path(Config.DB_PATH)  # ✅ Correção: usa o mesmo caminho definido no config.py
 sql_file = Path("escala360.sql")
 
 try:
@@ -41,7 +42,7 @@ try:
         subprocess.run([sys.executable, "init_db.py"], check=True)
         app.logger.info("✅ Banco de dados criado com sucesso via init_db.py.")
     else:
-        app.logger.info("💾 Banco de dados encontrado. Nenhuma recriação necessária.")
+        app.logger.info(f"💾 Banco de dados encontrado em: {db_file}")
 except subprocess.CalledProcessError as e:
     app.logger.error(f"❌ Falha ao executar init_db.py: {e}")
 except Exception as e:
@@ -78,8 +79,8 @@ try:
     app.register_blueprint(plantoes_bp)
     app.register_blueprint(substituicoes_bp)
     app.register_blueprint(auditoria_bp)
-    app.logger.info("🧩 Blueprints registrados com sucesso.")
 
+    app.logger.info("🧩 Blueprints registrados com sucesso.")
 except Exception as e:
     app.logger.error(f"❌ Falha ao registrar blueprints: {e}")
 
