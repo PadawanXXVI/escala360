@@ -13,17 +13,17 @@ Compatível com substituicoes.html (formulário e tabela).
 
 Base de dados: Tabela 'substituicoes' (ver escala360.sql)
 Campos:
-- id, titular_id, substituto_id, plantao_id, data
+- id, id_escala_original, id_profissional_solicitante,
+  id_profissional_substituto, status, data_solicitacao, motivo
 ===========================================================
 """
 
 from flask import Blueprint, jsonify, request, render_template, current_app
-from models import db, Substituicao, Profissional, Plantao
+from models import db, Substituicao, Escala, Profissional, Plantao
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime
 
 substituicoes_bp = Blueprint("substituicoes_bp", __name__, url_prefix="/substituicoes")
-
 
 # =========================================================
 # 🧩 Página principal
@@ -31,8 +31,13 @@ substituicoes_bp = Blueprint("substituicoes_bp", __name__, url_prefix="/substitu
 @substituicoes_bp.route("/")
 def view_substituicoes():
     """Renderiza a página de gestão de substituições."""
+    profissionais = Profissional.query.filter_by(ativo=True).order_by(Profissional.nome.asc()).all()
     current_app.logger.info("🔄 Acesso à página de Substituições.")
-    return render_template("substituicoes.html", title="Gestão de Substituições")
+    return render_template(
+        "substituicoes.html",
+        title="Gestão de Substituições",
+        profissionais=profissionais,
+    )
 
 
 # =========================================================
@@ -40,30 +45,30 @@ def view_substituicoes():
 # =========================================================
 @substituicoes_bp.get("/api")
 def listar_substituicoes():
-    """Lista todas as substituições com dados descritivos (JOINs)."""
+    """Lista todas as substituições com JOIN de escala, profissional e plantão."""
     try:
         substituicoes = (
-            db.session.query(Substituicao, Profissional, Plantao)
-            .join(Profissional, Profissional.id == Substituicao.titular_id)
-            .join(Plantao, Plantao.id == Substituicao.plantao_id)
-            .order_by(Substituicao.data.desc())
+            db.session.query(Substituicao, Escala, Profissional, Plantao)
+            .join(Escala, Substituicao.id_escala_original == Escala.id)
+            .join(Profissional, Substituicao.id_profissional_substituto == Profissional.id)
+            .join(Plantao, Escala.id_plantao == Plantao.id)
+            .order_by(Substituicao.data_solicitacao.desc())
             .all()
         )
 
         data = [
             {
-                "id": s.Substituicao.id,
-                "data": s.Substituicao.data.strftime("%Y-%m-%d"),
-                "plantao_id": s.Substituicao.plantao_id,
-                "plantao": s.Plantao.nome,
-                "titular_id": s.Substituicao.titular_id,
-                "titular": s.Profissional.nome,
-                "substituto_id": s.Substituicao.substituto_id,
-                "substituto": Profissional.query.get(s.Substituicao.substituto_id).nome
-                if s.Substituicao.substituto_id
-                else "",
+                "id": s.id,
+                "data_solicitacao": s.data_solicitacao.strftime("%Y-%m-%d %H:%M"),
+                "profissional_solicitante": Profissional.query.get(s.id_profissional_solicitante).nome,
+                "profissional_substituto": p.nome,
+                "data_plantao": pl.data.strftime("%Y-%m-%d"),
+                "hora_inicio": pl.hora_inicio.strftime("%H:%M"),
+                "hora_fim": pl.hora_fim.strftime("%H:%M"),
+                "status": s.status,
+                "motivo": s.motivo or "-",
             }
-            for s in substituicoes
+            for s, e, p, pl in substituicoes
         ]
 
         current_app.logger.info(f"📋 {len(data)} substituições listadas.")
@@ -82,21 +87,22 @@ def criar_substituicao():
     """Registra uma nova substituição."""
     payload = request.get_json(silent=True) or {}
     try:
-        titular_id = payload.get("titular_id")
-        substituto_id = payload.get("substituto_id")
-        plantao_id = payload.get("plantao_id")
-        data_str = payload.get("data")
+        id_escala = payload.get("id_escala_original")
+        id_solicitante = payload.get("id_profissional_solicitante")
+        id_substituto = payload.get("id_profissional_substituto")
+        motivo = payload.get("motivo", "")
+        status = payload.get("status", "pendente")
 
-        if not all([titular_id, substituto_id, plantao_id, data_str]):
+        if not all([id_escala, id_solicitante, id_substituto]):
             return jsonify({"ok": False, "error": "Campos obrigatórios ausentes."}), 400
 
-        data = datetime.strptime(data_str, "%Y-%m-%d").date()
-
         nova_sub = Substituicao(
-            titular_id=titular_id,
-            substituto_id=substituto_id,
-            plantao_id=plantao_id,
-            data=data,
+            id_escala_original=id_escala,
+            id_profissional_solicitante=id_solicitante,
+            id_profissional_substituto=id_substituto,
+            motivo=motivo,
+            status=status,
+            data_solicitacao=datetime.utcnow(),
         )
 
         db.session.add(nova_sub)
@@ -120,14 +126,14 @@ def atualizar_substituicao(id):
     try:
         sub = Substituicao.query.get_or_404(id)
 
-        if "titular_id" in payload:
-            sub.titular_id = payload["titular_id"]
-        if "substituto_id" in payload:
-            sub.substituto_id = payload["substituto_id"]
-        if "plantao_id" in payload:
-            sub.plantao_id = payload["plantao_id"]
-        if "data" in payload:
-            sub.data = datetime.strptime(payload["data"], "%Y-%m-%d").date()
+        if "id_profissional_solicitante" in payload:
+            sub.id_profissional_solicitante = payload["id_profissional_solicitante"]
+        if "id_profissional_substituto" in payload:
+            sub.id_profissional_substituto = payload["id_profissional_substituto"]
+        if "status" in payload:
+            sub.status = payload["status"]
+        if "motivo" in payload:
+            sub.motivo = payload["motivo"]
 
         db.session.commit()
         current_app.logger.info(f"✏️ Substituição {id} atualizada com sucesso.")
