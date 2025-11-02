@@ -40,8 +40,5 @@ def register_blueprints(app: Flask):
 
     # Log informativo
     app.logger.info("✅ Blueprints registrados com sucesso:")
-    app.logger.info("   - profissionais_bp")
-    app.logger.info("   - plantoes_bp")
-    app.logger.info("   - escalas_bp")
-    app.logger.info("   - substituicoes_bp")
-    app.logger.info("   - auditoria_bp")
+    for bp in ["profissionais_bp", "plantoes_bp", "escalas_bp", "substituicoes_bp", "auditoria_bp"]:
+        app.logger.info(f"   - {bp}")
