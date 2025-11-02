@@ -14,45 +14,16 @@ com logs persistentes, tratamento de erros customizados e contexto global.
 """
 
 import os
-import sys
-import subprocess
 import logging
 from datetime import datetime
 from pathlib import Path
 from flask import Flask, render_template, jsonify, request
 from config import Config
 from models import init_app as init_db
-
-
-# =========================================================
-# 🔧 Inicialização da Aplicação Flask
-# =========================================================
-app = Flask(__name__)
-app.config.from_object(Config)
+from init_db import init_database  # ✅ chamada direta, sem subprocess
 
 # =========================================================
-# 💾 Inicialização automática do banco (auto-criação se faltar)
-# =========================================================
-db_file = Path(Config.DB_PATH)  # ✅ Correção: usa o mesmo caminho definido no config.py
-sql_file = Path("escala360.sql")
-
-try:
-    if not db_file.exists():
-        app.logger.warning(f"⚠️ Banco {db_file} não encontrado. Iniciando criação automática...")
-        subprocess.run([sys.executable, "init_db.py"], check=True)
-        app.logger.info("✅ Banco de dados criado com sucesso via init_db.py.")
-    else:
-        app.logger.info(f"💾 Banco de dados encontrado em: {db_file}")
-except subprocess.CalledProcessError as e:
-    app.logger.error(f"❌ Falha ao executar init_db.py: {e}")
-except Exception as e:
-    app.logger.error(f"❌ Erro inesperado ao inicializar o banco: {e}")
-
-# Inicializa o ORM (SQLAlchemy)
-init_db(app)
-
-# =========================================================
-# 🧾 Logging e Monitoramento
+# 🧾 Logging - Configuração inicial
 # =========================================================
 os.makedirs(os.path.dirname(Config.LOG_FILE), exist_ok=True)
 
@@ -62,7 +33,34 @@ logging.basicConfig(
     format=getattr(Config, "LOG_FORMAT", "%(asctime)s [%(levelname)s] %(message)s"),
     datefmt="%d/%m/%Y %H:%M:%S",
 )
-app.logger.info("✅ Configurações carregadas e banco inicializado com sucesso.")
+logger = logging.getLogger("ESCALA360")
+
+# =========================================================
+# 🔧 Inicialização da Aplicação Flask
+# =========================================================
+app = Flask(__name__)
+app.config.from_object(Config)
+
+# =========================================================
+# 💾 Inicialização automática do banco
+# =========================================================
+db_file = Path(Config.DB_PATH)
+
+if not db_file.exists():
+    logger.warning(f"⚠ Banco {db_file} não encontrado. Criando automaticamente via init_database()...")
+    try:
+        init_database()
+        logger.info("✅ Banco de dados criado e populado com sucesso.")
+    except Exception as e:
+        logger.critical(f"❌ Falha crítica ao criar o banco de dados: {e}")
+        raise SystemExit("Erro fatal: o banco não pôde ser criado. Corrija e reinicie o servidor.")
+else:
+    logger.info(f"💾 Banco de dados existente localizado em {db_file}")
+
+# =========================================================
+# 🔗 Inicialização do ORM (SQLAlchemy)
+# =========================================================
+init_db(app)
 
 # =========================================================
 # 🧩 Registro de Blueprints
@@ -80,9 +78,9 @@ try:
     app.register_blueprint(substituicoes_bp)
     app.register_blueprint(auditoria_bp)
 
-    app.logger.info("🧩 Blueprints registrados com sucesso.")
+    logger.info("🧩 Blueprints registrados com sucesso.")
 except Exception as e:
-    app.logger.error(f"❌ Falha ao registrar blueprints: {e}")
+    logger.error(f"❌ Falha ao registrar blueprints: {e}")
 
 # =========================================================
 # 🕓 Contexto Global (para {{ now() }} em templates Jinja)
@@ -98,14 +96,14 @@ def inject_now():
 @app.get("/")
 def index():
     """Renderiza o painel de produtividade principal (KPI + BI Plotly)."""
-    app.logger.info("🟢 Acesso ao Painel de Produtividade (index.html)")
+    logger.info("🟢 Acesso ao Painel de Produtividade (index.html)")
     return render_template("index.html", title="Painel de Produtividade – Escala360")
 
 
 @app.get("/api/status")
 def status():
     """Retorna o status geral da aplicação (monitoramento e health check)."""
-    app.logger.info("🔍 Verificação de status do sistema")
+    logger.info("🔍 Verificação de status do sistema")
     return jsonify(
         {
             "status": "online",
@@ -128,21 +126,21 @@ def erro_teste():
 @app.errorhandler(404)
 def page_not_found(e):
     """Erro 404 - Página não encontrada."""
-    app.logger.warning(f"⚠️ Erro 404 - Página não encontrada: {request.path}")
+    logger.warning(f"⚠ Erro 404 - Página não encontrada: {request.path}")
     return render_template("404.html", title="Página não encontrada – Escala360"), 404
 
 
 @app.errorhandler(500)
 def internal_error(e):
     """Erro 500 - Falha interna do servidor."""
-    app.logger.error(f"❌ Erro 500 - Falha interna: {e}")
+    logger.error(f"❌ Erro 500 - Falha interna: {e}")
     return render_template("500.html", title="Erro interno – Escala360"), 500
 
 # =========================================================
 # 🚀 Execução Local (modo desenvolvimento)
 # =========================================================
-if __name__ == "__main__":
-    app.logger.info(
+if __name__ == "_main_":
+    logger.info(
         f"🚀 Servidor ESCALA360 iniciado em {Config.FLASK_ENV.upper()} "
         f"({Config.HOST}:{Config.PORT}) com debug={Config.FLASK_DEBUG}"
     )
