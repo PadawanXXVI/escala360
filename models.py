@@ -6,9 +6,9 @@ Data: 31/10/2025
 ===========================================================
 
 Descrição:
-Modelos compatíveis com o banco de dados oficial escala360.sql
-fornecido pelo professor. Inclui entidades:
-Profissional, Plantao, Escala, Substituicao e Auditoria.
+Modelos 100% compatíveis com o banco oficial escala360.sql.
+Define as entidades: Profissional, Plantao, Escala,
+Substituicao e Auditoria.
 ===========================================================
 """
 
@@ -28,7 +28,7 @@ class Profissional(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(120), nullable=False)
     cargo = db.Column(db.String(80))
-    email = db.Column(db.String(120), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True)
     telefone = db.Column(db.String(20))
     ativo = db.Column(db.Boolean, default=True)
 
@@ -49,8 +49,8 @@ class Plantao(db.Model):
     data = db.Column(db.Date, nullable=False)
     hora_inicio = db.Column(db.Time, nullable=False)
     hora_fim = db.Column(db.Time, nullable=False)
-    local = db.Column(db.String(100))
-    funcao = db.Column(db.String(80))
+    id_funcao = db.Column(db.Integer)
+    id_local = db.Column(db.Integer)
 
     escalas = db.relationship("Escala", back_populates="plantao", cascade="all, delete-orphan")
 
@@ -66,8 +66,8 @@ class Escala(db.Model):
     __tablename__ = "escalas"
 
     id = db.Column(db.Integer, primary_key=True)
-    profissional_id = db.Column(db.Integer, db.ForeignKey("profissionais.id"), nullable=False)
-    plantao_id = db.Column(db.Integer, db.ForeignKey("plantoes.id"), nullable=False)
+    id_profissional = db.Column(db.Integer, db.ForeignKey("profissionais.id"), nullable=False)
+    id_plantao = db.Column(db.Integer, db.ForeignKey("plantoes.id"), nullable=False)
     status = db.Column(db.String(50), default="Ativo")
     observacao = db.Column(db.String(255))
     data_registro = db.Column(db.DateTime, default=datetime.utcnow)
@@ -77,7 +77,7 @@ class Escala(db.Model):
     substituicoes = db.relationship("Substituicao", back_populates="escala", cascade="all, delete-orphan")
 
     def __repr__(self):
-        return f"<Escala Prof:{self.profissional_id} - Plantao:{self.plantao_id} - {self.status}>"
+        return f"<Escala Prof:{self.id_profissional} - Plantao:{self.id_plantao} - {self.status}>"
 
 
 # =========================================================
@@ -88,16 +88,19 @@ class Substituicao(db.Model):
     __tablename__ = "substituicoes"
 
     id = db.Column(db.Integer, primary_key=True)
-    escala_id = db.Column(db.Integer, db.ForeignKey("escalas.id"), nullable=False)
-    substituto_id = db.Column(db.Integer, db.ForeignKey("profissionais.id"), nullable=False)
-    motivo = db.Column(db.String(200))
+    id_escala_original = db.Column(db.Integer, db.ForeignKey("escalas.id"), nullable=False)
+    id_profissional_solicitante = db.Column(db.Integer, db.ForeignKey("profissionais.id"), nullable=False)
+    id_profissional_substituto = db.Column(db.Integer, db.ForeignKey("profissionais.id"), nullable=False)
+    status = db.Column(db.String(50), default="pendente")
     data_solicitacao = db.Column(db.DateTime, default=datetime.utcnow)
+    motivo = db.Column(db.String(200))
 
-    escala = db.relationship("Escala", back_populates="substituicoes")
-    substituto = db.relationship("Profissional")
+    escala = db.relationship("Escala", back_populates="substituicoes", foreign_keys=[id_escala_original])
+    solicitante = db.relationship("Profissional", foreign_keys=[id_profissional_solicitante])
+    substituto = db.relationship("Profissional", foreign_keys=[id_profissional_substituto])
 
     def __repr__(self):
-        return f"<Substituicao Escala:{self.escala_id} -> Substituto:{self.substituto_id}>"
+        return f"<Substituicao Escala:{self.id_escala_original} Subst:{self.id_profissional_substituto}>"
 
 
 # =========================================================
@@ -108,12 +111,14 @@ class Auditoria(db.Model):
     __tablename__ = "auditoria"
 
     id = db.Column(db.Integer, primary_key=True)
+    entidade = db.Column(db.String(50), nullable=False)
+    id_entidade = db.Column(db.Integer, nullable=False)
     acao = db.Column(db.String(255), nullable=False)
     usuario = db.Column(db.String(100), nullable=False)
-    data_acao = db.Column(db.DateTime, default=datetime.utcnow)
+    data_hora = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
-        return f"<Auditoria {self.usuario}: {self.acao}>"
+        return f"<Auditoria {self.entidade}:{self.id_entidade} ({self.acao})>"
 
 
 # =========================================================
