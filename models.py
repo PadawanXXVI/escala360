@@ -66,8 +66,12 @@ class Escala(db.Model):
     __tablename__ = "escalas"
 
     id = db.Column(db.Integer, primary_key=True)
-    id_profissional = db.Column(db.Integer, db.ForeignKey("profissionais.id"), nullable=False)
-    id_plantao = db.Column(db.Integer, db.ForeignKey("plantoes.id"), nullable=False)
+    id_profissional = db.Column(
+        db.Integer, db.ForeignKey("profissionais.id", ondelete="CASCADE"), nullable=False
+    )
+    id_plantao = db.Column(
+        db.Integer, db.ForeignKey("plantoes.id", ondelete="CASCADE"), nullable=False
+    )
     status = db.Column(db.String(50), default="Ativo")
     observacao = db.Column(db.String(255))
     data_registro = db.Column(db.DateTime, default=datetime.utcnow)
@@ -88,9 +92,21 @@ class Substituicao(db.Model):
     __tablename__ = "substituicoes"
 
     id = db.Column(db.Integer, primary_key=True)
-    id_escala_original = db.Column(db.Integer, db.ForeignKey("escalas.id"), nullable=False)
-    id_profissional_solicitante = db.Column(db.Integer, db.ForeignKey("profissionais.id"), nullable=False)
-    id_profissional_substituto = db.Column(db.Integer, db.ForeignKey("profissionais.id"), nullable=False)
+    id_escala_original = db.Column(
+        db.Integer,
+        db.ForeignKey("escalas.id", ondelete="CASCADE"),
+        nullable=False
+    )
+    id_profissional_solicitante = db.Column(
+        db.Integer,
+        db.ForeignKey("profissionais.id", ondelete="CASCADE"),
+        nullable=False
+    )
+    id_profissional_substituto = db.Column(
+        db.Integer,
+        db.ForeignKey("profissionais.id", ondelete="CASCADE"),
+        nullable=False
+    )
     status = db.Column(db.String(50), default="pendente")
     data_solicitacao = db.Column(db.DateTime, default=datetime.utcnow)
     motivo = db.Column(db.String(200))
