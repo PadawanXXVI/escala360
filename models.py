@@ -1,146 +1,148 @@
 """
 ===========================================================
-ESCALA360 - Modelos de Dados (SQLAlchemy)
+ESCALA360 - Modelos ORM (SQLAlchemy)
 Autor: Anderson de Matos Guimarães
-Data: 31/10/2025
+Data: 02/11/2025
 ===========================================================
 
 Descrição:
-Modelos 100% compatíveis com o banco oficial escala360.sql.
-Define as entidades: Profissional, Plantao, Escala,
-Substituicao e Auditoria.
+Mapeia as tabelas do banco de dados PostgreSQL utilizando SQLAlchemy.
+O schema reflete exatamente a estrutura definida no arquivo escala360.sql.
 ===========================================================
 """
 
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-from config import Config
 
+# Instância global do SQLAlchemy
 db = SQLAlchemy()
 
+
 # =========================================================
-# 👥 PROFISSIONAIS
+# 🔧 Inicializador do ORM
+# =========================================================
+def init_app(app):
+    """Inicializa o SQLAlchemy com o contexto Flask."""
+    db.init_app(app)
+    with app.app_context():
+        db.create_all()
+
+
+# =========================================================
+# 👩‍⚕ Modelo: Profissional
 # =========================================================
 class Profissional(db.Model):
-    """Tabela de profissionais cadastrados."""
-    __tablename__ = "profissionais"
+    _tablename_ = "profissionais"
 
     id = db.Column(db.Integer, primary_key=True)
-    nome = db.Column(db.String(120), nullable=False)
-    cargo = db.Column(db.String(80))
-    email = db.Column(db.String(120), unique=True)
+    nome = db.Column(db.String(255), nullable=False)
+    cargo = db.Column(db.String(255), nullable=False)
+    email = db.Column(db.String(255), nullable=False)
     telefone = db.Column(db.String(20))
     ativo = db.Column(db.Boolean, default=True)
 
-    escalas = db.relationship("Escala", back_populates="profissional", cascade="all, delete-orphan")
+    # Relacionamentos
+    escalas = db.relationship("Escala", back_populates="profissional", lazy=True)
+    substituicoes_solicitadas = db.relationship(
+        "Substituicao",
+        foreign_keys="Substituicao.id_profissional_solicitante",
+        back_populates="profissional_solicitante",
+        lazy=True,
+    )
+    substituicoes_substituto = db.relationship(
+        "Substituicao",
+        foreign_keys="Substituicao.id_profissional_substituto",
+        back_populates="profissional_substituto",
+        lazy=True,
+    )
 
-    def __repr__(self):
-        return f"<Profissional {self.nome}>"
+    def _repr_(self):
+        return f"<Profissional {self.nome} ({'ativo' if self.ativo else 'inativo'})>"
 
 
 # =========================================================
-# 🕒 PLANTÕES
+# 🕒 Modelo: Plantão
 # =========================================================
 class Plantao(db.Model):
-    """Tabela de plantões disponíveis (equivalente aos turnos)."""
-    __tablename__ = "plantoes"
+    _tablename_ = "plantoes"
 
     id = db.Column(db.Integer, primary_key=True)
     data = db.Column(db.Date, nullable=False)
     hora_inicio = db.Column(db.Time, nullable=False)
     hora_fim = db.Column(db.Time, nullable=False)
-    id_funcao = db.Column(db.Integer)
-    id_local = db.Column(db.Integer)
+    id_funcao = db.Column(db.Integer, nullable=False)
+    id_local = db.Column(db.Integer, nullable=False)
 
-    escalas = db.relationship("Escala", back_populates="plantao", cascade="all, delete-orphan")
+    # Relacionamentos
+    escalas = db.relationship("Escala", back_populates="plantao", lazy=True)
 
-    def __repr__(self):
-        return f"<Plantao {self.data} ({self.hora_inicio}-{self.hora_fim})>"
+    def _repr_(self):
+        return f"<Plantão {self.data} {self.hora_inicio}-{self.hora_fim}>"
 
 
 # =========================================================
-# 📅 ESCALAS
+# 📅 Modelo: Escala
 # =========================================================
 class Escala(db.Model):
-    """Tabela principal: vínculo entre profissional e plantão."""
-    __tablename__ = "escalas"
+    _tablename_ = "escalas"
 
     id = db.Column(db.Integer, primary_key=True)
-    id_profissional = db.Column(
-        db.Integer, db.ForeignKey("profissionais.id", ondelete="CASCADE"), nullable=False
-    )
-    id_plantao = db.Column(
-        db.Integer, db.ForeignKey("plantoes.id", ondelete="CASCADE"), nullable=False
-    )
-    status = db.Column(db.String(50), default="Ativo")
-    observacao = db.Column(db.String(255))
-    data_registro = db.Column(db.DateTime, default=datetime.utcnow)
+    id_plantao = db.Column(db.Integer, db.ForeignKey("plantoes.id"), nullable=False)
+    id_profissional = db.Column(db.Integer, db.ForeignKey("profissionais.id"), nullable=False)
+    status = db.Column(db.String(50), default="ativo")
+    data_alocacao = db.Column(db.DateTime, default=datetime.now)
 
-    profissional = db.relationship("Profissional", back_populates="escalas")
+    # Relacionamentos
     plantao = db.relationship("Plantao", back_populates="escalas")
-    substituicoes = db.relationship("Substituicao", back_populates="escala", cascade="all, delete-orphan")
+    profissional = db.relationship("Profissional", back_populates="escalas")
+    substituicoes = db.relationship("Substituicao", back_populates="escala", lazy=True)
 
-    def __repr__(self):
-        return f"<Escala Prof:{self.id_profissional} - Plantao:{self.id_plantao} - {self.status}>"
+    def _repr_(self):
+        return f"<Escala Plantão={self.id_plantao}, Profissional={self.id_profissional}, Status={self.status}>"
 
 
 # =========================================================
-# 🔁 SUBSTITUIÇÕES
+# 🔁 Modelo: Substituição
 # =========================================================
 class Substituicao(db.Model):
-    """Tabela de substituições de escalas."""
-    __tablename__ = "substituicoes"
+    _tablename_ = "substituicoes"
 
     id = db.Column(db.Integer, primary_key=True)
-    id_escala_original = db.Column(
-        db.Integer,
-        db.ForeignKey("escalas.id", ondelete="CASCADE"),
-        nullable=False
-    )
-    id_profissional_solicitante = db.Column(
-        db.Integer,
-        db.ForeignKey("profissionais.id", ondelete="CASCADE"),
-        nullable=False
-    )
-    id_profissional_substituto = db.Column(
-        db.Integer,
-        db.ForeignKey("profissionais.id", ondelete="CASCADE"),
-        nullable=False
-    )
+    id_escala_original = db.Column(db.Integer, db.ForeignKey("escalas.id"), nullable=False)
+    id_profissional_solicitante = db.Column(db.Integer, db.ForeignKey("profissionais.id"), nullable=False)
+    id_profissional_substituto = db.Column(db.Integer, db.ForeignKey("profissionais.id"), nullable=False)
+    data_solicitacao = db.Column(db.DateTime, default=datetime.now)
     status = db.Column(db.String(50), default="pendente")
-    data_solicitacao = db.Column(db.DateTime, default=datetime.utcnow)
-    motivo = db.Column(db.String(200))
 
-    escala = db.relationship("Escala", back_populates="substituicoes", foreign_keys=[id_escala_original])
-    solicitante = db.relationship("Profissional", foreign_keys=[id_profissional_solicitante])
-    substituto = db.relationship("Profissional", foreign_keys=[id_profissional_substituto])
+    # Relacionamentos
+    escala = db.relationship("Escala", back_populates="substituicoes")
+    profissional_solicitante = db.relationship(
+        "Profissional",
+        foreign_keys=[id_profissional_solicitante],
+        back_populates="substituicoes_solicitadas",
+    )
+    profissional_substituto = db.relationship(
+        "Profissional",
+        foreign_keys=[id_profissional_substituto],
+        back_populates="substituicoes_substituto",
+    )
 
-    def __repr__(self):
-        return f"<Substituicao Escala:{self.id_escala_original} Subst:{self.id_profissional_substituto}>"
+    def _repr_(self):
+        return f"<Substituição Escala={self.id_escala_original}, Status={self.status}>"
 
 
 # =========================================================
-# 🧾 AUDITORIA
+# 🧾 Modelo: Auditoria
 # =========================================================
 class Auditoria(db.Model):
-    """Tabela de registro de ações realizadas no sistema."""
-    __tablename__ = "auditoria"
+    _tablename_ = "auditoria"
 
     id = db.Column(db.Integer, primary_key=True)
-    entidade = db.Column(db.String(50), nullable=False)
+    entidade = db.Column(db.String(100), nullable=False)
     id_entidade = db.Column(db.Integer, nullable=False)
-    acao = db.Column(db.String(255), nullable=False)
+    acao = db.Column(db.String(50), nullable=False)
     usuario = db.Column(db.String(100), nullable=False)
-    data_hora = db.Column(db.DateTime, default=datetime.utcnow)
+    data_hora = db.Column(db.DateTime, default=datetime.now)
 
-    def __repr__(self):
-        return f"<Auditoria {self.entidade}:{self.id_entidade} ({self.acao})>"
-
-
-# =========================================================
-# ⚙️ Inicialização do Banco
-# =========================================================
-def init_app(app):
-    """Inicializa o contexto do banco na aplicação Flask."""
-    db.init_app(app)
-    app.logger.info(f"💾 Banco {Config.DB_NAME} ({Config.DB_ENGINE}) inicializado com sucesso.")
+    def _repr_(self):
+        return f"<Auditoria {self.entidade} {self.acao} por {self.usuario}>"
