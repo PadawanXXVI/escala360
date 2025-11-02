@@ -25,7 +25,6 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 profissionais_bp = Blueprint("profissionais_bp", __name__, url_prefix="/profissionais")
 
-
 # =========================================================
 # 🔹 Página de interface
 # =========================================================
@@ -68,9 +67,11 @@ def listar_profissionais():
 # =========================================================
 @profissionais_bp.get("/api/<int:id>")
 def obter_profissional(id):
-    """Retorna os dados de um profissional específico (usado na edição)."""
+    """Retorna os dados de um profissional específico."""
     try:
-        p = Profissional.query.get_or_404(id)
+        p = Profissional.query.get(id)
+        if not p:
+            return jsonify({"ok": False, "error": "Profissional não encontrado."}), 404
         return jsonify(
             {
                 "id": p.id,
@@ -83,7 +84,7 @@ def obter_profissional(id):
         ), 200
     except SQLAlchemyError as e:
         current_app.logger.error(f"❌ Erro ao buscar profissional {id}: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 
 # =========================================================
