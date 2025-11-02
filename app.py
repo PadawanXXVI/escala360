@@ -2,7 +2,7 @@
 ===========================================================
 ESCALA360 - Sistema de Gestão de Escalas e Produtividade
 Autor: Anderson de Matos Guimarães
-Data: 31/10/2025
+Data: 02/11/2025
 Framework: Flask 3.1.2
 ===========================================================
 
@@ -35,16 +35,17 @@ app.config.from_object(Config)
 db_file = Path(Config.DB_NAME)
 sql_file = Path("escala360.sql")
 
-if not db_file.exists():
-    app.logger.warning(f"⚠️ Banco {db_file} não encontrado. Iniciando criação automática...")
-    try:
-        # Usa o mesmo interpretador Python do ambiente virtual (.venv)
+try:
+    if not db_file.exists():
+        app.logger.warning(f"⚠️ Banco {db_file} não encontrado. Iniciando criação automática...")
         subprocess.run([sys.executable, "init_db.py"], check=True)
         app.logger.info("✅ Banco de dados criado com sucesso via init_db.py.")
-    except subprocess.CalledProcessError as e:
-        app.logger.error(f"❌ Falha ao executar init_db.py: {e}")
-else:
-    app.logger.info("💾 Banco de dados encontrado. Nenhuma recriação necessária.")
+    else:
+        app.logger.info("💾 Banco de dados encontrado. Nenhuma recriação necessária.")
+except subprocess.CalledProcessError as e:
+    app.logger.error(f"❌ Falha ao executar init_db.py: {e}")
+except Exception as e:
+    app.logger.error(f"❌ Erro inesperado ao inicializar o banco: {e}")
 
 # Inicializa o ORM (SQLAlchemy)
 init_db(app)
@@ -52,6 +53,8 @@ init_db(app)
 # =========================================================
 # 🧾 Logging e Monitoramento
 # =========================================================
+os.makedirs(os.path.dirname(Config.LOG_FILE), exist_ok=True)
+
 logging.basicConfig(
     filename=Config.LOG_FILE,
     level=getattr(logging, Config.LOG_LEVEL.upper(), logging.INFO),
@@ -63,17 +66,22 @@ app.logger.info("✅ Configurações carregadas e banco inicializado com sucesso
 # =========================================================
 # 🧩 Registro de Blueprints
 # =========================================================
-from blueprints.escalas import escalas_bp
-from blueprints.profissionais import profissionais_bp
-from blueprints.plantoes import plantoes_bp
-from blueprints.substituicoes import substituicoes_bp
-from blueprints.auditoria import auditoria_bp
+try:
+    from blueprints.escalas import escalas_bp
+    from blueprints.profissionais import profissionais_bp
+    from blueprints.plantoes import plantoes_bp
+    from blueprints.substituicoes import substituicoes_bp
+    from blueprints.auditoria import auditoria_bp
 
-app.register_blueprint(escalas_bp)
-app.register_blueprint(profissionais_bp)
-app.register_blueprint(plantoes_bp)
-app.register_blueprint(substituicoes_bp)
-app.register_blueprint(auditoria_bp)
+    app.register_blueprint(escalas_bp)
+    app.register_blueprint(profissionais_bp)
+    app.register_blueprint(plantoes_bp)
+    app.register_blueprint(substituicoes_bp)
+    app.register_blueprint(auditoria_bp)
+    app.logger.info("🧩 Blueprints registrados com sucesso.")
+
+except Exception as e:
+    app.logger.error(f"❌ Falha ao registrar blueprints: {e}")
 
 # =========================================================
 # 🕓 Contexto Global (para {{ now() }} em templates Jinja)
