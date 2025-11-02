@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Profissionais – ESCALA360{% endblock %}
+
+{% block content %}
+<header class="mb-6">
+  <h1 class="text-2xl font-semibold mb-1 flex items-center gap-2">
+    <i class="fas fa-user-md text-indigo-600"></i>
+    Gestão de Profissionais
+  </h1>
+  <p class="text-gray-600 dark:text-gray-400">
+    Cadastre, atualize ou inative profissionais da equipe.
+  </p>
+</header>
+
+<!-- Formulário de Cadastro -->
+<section aria-labelledby="novo-profissional" class="mb-8">
+  <h2 id="novo-profissional" class="sr-only">Cadastrar Novo Profissional</h2>
+
+  <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
+    <form id="form-profissional" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label for="nome" class="block font-medium">Nome</label>
+        <input
+          type="text"
+          id="nome"
+          name="nome"
+          required
+          class="input-field"
+          placeholder="Ex: Ana Souza"
+        />
+      </div>
+
+      <div>
+        <label for="cargo" class="block font-medium">Cargo</label>
+        <input
+          type="text"
+          id="cargo"
+          name="cargo"
+          required
+          class="input-field"
+          placeholder="Ex: Enfermeira"
+        />
+      </div>
+
+      <div>
+        <label for="email" class="block font-medium">Email</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          required
+          class="input-field"
+          placeholder="exemplo@dominio.com"
+        />
+      </div>
+
+      <div>
+        <label for="telefone" class="block font-medium">Telefone</label>
+        <input
+          type="text"
+          id="telefone"
+          name="telefone"
+          class="input-field"
+          placeholder="11999990000"
+        />
+      </div>
+
+      <div class="md:col-span-2 flex justify-end">
+        <button
+          type="submit"
+          class="btn-primary flex items-center gap-2"
+          title="Salvar novo profissional"
+        >
+          <i class="fas fa-save"></i> Salvar
+        </button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- Listagem de Profissionais -->
+<section aria-labelledby="lista-profissionais">
+  <h2 id="lista-profissionais" class="sr-only">Lista de Profissionais</h2>
+
+  <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-semibold">Profissionais Cadastrados</h3>
+      <input
+        type="text"
+        id="buscar-profissional"
+        class="input-field w-60"
+        placeholder="Buscar por nome..."
+      />
+    </div>
+
+    <div class="table-container">
+      <table class="w-full table-auto">
+        <thead>
+          <tr class="text-left border-b border-gray-300 dark:border-gray-700">
+            <th>Nome</th>
+            <th>Cargo</th>
+            <th>Email</th>
+            <th>Telefone</th>
+            <th>Status</th>
+            <th class="text-center">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tabela-profissionais">
+          <tr>
+            <td colspan="6" class="text-center py-4 text-gray-500">
+              Carregando profissionais...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    listarProfissionais();
+
+    document
+      .getElementById("form-profissional")
+      .addEventListener("submit", async (e) => {
+        e.preventDefault();
+        await salvarProfissional();
+      });
+
+    document
+      .getElementById("buscar-profissional")
+      .addEventListener("input", filtrarProfissionais);
+  });
+</script>
+{% endblock %}
