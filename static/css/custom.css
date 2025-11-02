@@ -2,7 +2,7 @@
    ESCALA360 - Custom CSS
    Camada de estilo complementar ao Tailwind CSS (CDN)
    Autor: Anderson de Matos Guimarães
-   Data: 31/10/2025
+   Data: 02/11/2025
    ========================================================= */
 
 /* ---------- VARIÁVEIS DE TEMA ---------- */
@@ -91,6 +91,31 @@ body {
   box-shadow: 0 3px 10px rgba(79, 70, 229, 0.25);
 }
 
+/* Suplementares */
+.btn-success {
+  background-color: var(--success-color);
+  color: white;
+}
+.btn-success:hover {
+  background-color: #15803d;
+}
+
+.btn-warning {
+  background-color: var(--warning-color);
+  color: white;
+}
+.btn-warning:hover {
+  background-color: #d97706;
+}
+
+.btn-danger {
+  background-color: var(--danger-color);
+  color: white;
+}
+.btn-danger:hover {
+  background-color: #b91c1c;
+}
+
 /* ---------- CARDS / DASHBOARD ---------- */
 .card {
   background-color: white;
@@ -173,6 +198,8 @@ footer {
   padding: 1rem;
   font-size: 0.875rem;
   border-top: 1px solid #e5e7eb;
+  font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
+  letter-spacing: 0.3px;
 }
 
 .dark footer {
@@ -213,4 +240,17 @@ a:focus, button:focus {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--primary-color);
+}
+
+/* ---------- ANIMAÇÕES GLOBAIS ---------- */
+.fade-up {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: fadeUp 0.4s ease-out forwards;
+}
+@keyframes fadeUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
