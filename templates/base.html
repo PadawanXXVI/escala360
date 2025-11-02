@@ -21,6 +21,8 @@
   <!-- Estilos customizados -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
 
+  {% block extra_head %}{% endblock %}
+
   <style>
     body {
       font-family: 'Inter', sans-serif;
@@ -37,22 +39,18 @@
       background-color: rgba(24, 24, 27, 0.9);
     }
 
-    /* 🔹 Links */
-    .nav-link {
-      padding-bottom: 2px;
-      border-bottom: 2px solid transparent;
-      transition: all 0.25s ease;
+    /* 🔹 Botões da navbar */
+    .nav-btn {
+      @apply px-3 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2;
     }
-    .nav-link:hover {
-      color: #4f46e5;
+    .nav-btn:hover {
+      @apply bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300;
     }
     .nav-active {
-      color: #4f46e5;
-      border-color: #4f46e5;
-      font-weight: 600;
+      @apply bg-indigo-500 text-white dark:bg-indigo-600;
     }
 
-    /* 🔹 Transições */
+    /* 🔹 Transições suaves */
     .fade-in {
       opacity: 0;
       animation: fadeIn 0.4s ease-in forwards;
@@ -70,13 +68,37 @@
         Escala360
       </a>
 
-      <div class="hidden md:flex space-x-8 text-sm font-medium">
-        <a href="{{ url_for('index') }}" class="nav-link {{ 'nav-active' if request.path == '/' else '' }}">Painel</a>
-        <a href="{{ url_for('escalas_bp.view_escalas') }}" class="nav-link {{ 'nav-active' if request.path.startswith('/escalas') else '' }}">Escalas</a>
-        <a href="{{ url_for('profissionais_bp.view_profissionais') }}" class="nav-link {{ 'nav-active' if request.path.startswith('/profissionais') else '' }}">Profissionais</a>
-        <a href="{{ url_for('plantoes_bp.view_plantoes') }}" class="nav-link {{ 'nav-active' if request.path.startswith('/plantoes') else '' }}">Plantões</a>
-        <a href="{{ url_for('substituicoes_bp.view_substituicoes') }}" class="nav-link {{ 'nav-active' if request.path.startswith('/substituicoes') else '' }}">Substituições</a>
-        <a href="{{ url_for('auditoria_bp.view_auditoria') }}" class="nav-link {{ 'nav-active' if request.path.startswith('/auditoria') else '' }}">Auditoria</a>
+      <div class="hidden md:flex space-x-2">
+        <a href="{{ url_for('index') }}">
+          <button class="nav-btn {{ 'nav-active' if request.path == '/' else '' }}">
+            <i class="fas fa-chart-line"></i> Painel
+          </button>
+        </a>
+        <a href="{{ url_for('escalas_bp.view_escalas') }}">
+          <button class="nav-btn {{ 'nav-active' if request.path.startswith('/escalas') else '' }}">
+            <i class="fas fa-calendar-alt"></i> Escalas
+          </button>
+        </a>
+        <a href="{{ url_for('profissionais_bp.view_profissionais') }}">
+          <button class="nav-btn {{ 'nav-active' if request.path.startswith('/profissionais') else '' }}">
+            <i class="fas fa-user-md"></i> Profissionais
+          </button>
+        </a>
+        <a href="{{ url_for('plantoes_bp.view_plantoes') }}">
+          <button class="nav-btn {{ 'nav-active' if request.path.startswith('/plantoes') else '' }}">
+            <i class="fas fa-clock"></i> Plantões
+          </button>
+        </a>
+        <a href="{{ url_for('substituicoes_bp.view_substituicoes') }}">
+          <button class="nav-btn {{ 'nav-active' if request.path.startswith('/substituicoes') else '' }}">
+            <i class="fas fa-exchange-alt"></i> Substituições
+          </button>
+        </a>
+        <a href="{{ url_for('auditoria_bp.view_auditoria') }}">
+          <button class="nav-btn {{ 'nav-active' if request.path.startswith('/auditoria') else '' }}">
+            <i class="fas fa-clipboard-list"></i> Auditoria
+          </button>
+        </a>
       </div>
 
       <button id="darkToggle" class="text-gray-600 dark:text-gray-300 hover:text-indigo-500 transition" aria-label="Alternar tema">
@@ -100,5 +122,6 @@
   <!-- FontAwesome + Script principal -->
   <script src="https://kit.fontawesome.com/4b6d1b36d0.js" crossorigin="anonymous"></script>
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block scripts %}{% endblock %}
 </body>
 </html>
