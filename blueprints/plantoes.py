@@ -2,13 +2,12 @@
 ===========================================================
 ESCALA360 - Blueprint: Plantões
 Autor: Anderson de Matos Guimarães
-Data: 31/10/2025
+Data: 02/11/2025
 ===========================================================
 
 Descrição:
 Gerencia os plantões de trabalho da aplicação Escala360,
-permitindo a criação, listagem, atualização e exclusão
-de registros de plantão.
+permitindo criação, listagem, atualização e exclusão.
 
 Base de dados: Tabela 'plantoes' (ver escala360.sql)
 Campos principais:
@@ -21,7 +20,7 @@ Rotas principais:
 """
 
 from flask import Blueprint, jsonify, request, render_template, current_app
-from models import db, Plantao  # ✅ modelo atualizado
+from models import db, Plantao
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -49,9 +48,9 @@ def listar_plantoes():
         data = [
             {
                 "id": p.id,
-                "data": p.data.strftime("%Y-%m-%d") if p.data else None,
-                "hora_inicio": p.hora_inicio.strftime("%H:%M") if p.hora_inicio else None,
-                "hora_fim": p.hora_fim.strftime("%H:%M") if p.hora_fim else None,
+                "data": p.data.strftime("%Y-%m-%d") if p.data else "",
+                "hora_inicio": p.hora_inicio.strftime("%H:%M") if p.hora_inicio else "",
+                "hora_fim": p.hora_fim.strftime("%H:%M") if p.hora_fim else "",
                 "id_funcao": p.id_funcao,
                 "id_local": p.id_local,
             }
@@ -70,17 +69,7 @@ def listar_plantoes():
 # =========================================================
 @plantoes_bp.post("/api")
 def criar_plantao():
-    """
-    Cria um novo plantão.
-    Exemplo de payload:
-    {
-        "data": "2025-07-01",
-        "hora_inicio": "08:00",
-        "hora_fim": "14:00",
-        "id_funcao": 1,
-        "id_local": 1
-    }
-    """
+    """Cria um novo plantão."""
     payload = request.get_json(silent=True) or {}
     try:
         data_str = payload.get("data")
@@ -106,13 +95,16 @@ def criar_plantao():
 
         db.session.add(novo_plantao)
         db.session.commit()
-        current_app.logger.info(f"✅ Plantão criado: {data_str} ({hora_inicio}-{hora_fim})")
+        current_app.logger.info(
+            f"✅ Plantão criado com sucesso: {data_str} ({hora_inicio}-{hora_fim}) [ID {novo_plantao.id}]"
+        )
         return jsonify({"ok": True, "id": novo_plantao.id}), 201
 
     except SQLAlchemyError as e:
         db.session.rollback()
         current_app.logger.error(f"❌ Erro ao criar plantão: {e}")
         return jsonify({"ok": False, "error": str(e)}), 500
+
     except Exception as e:
         current_app.logger.error(f"⚠️ Erro inesperado ao criar plantão: {e}")
         return jsonify({"ok": False, "error": str(e)}), 500
@@ -159,7 +151,7 @@ def excluir_plantao(id):
         plantao = Plantao.query.get_or_404(id)
         db.session.delete(plantao)
         db.session.commit()
-        current_app.logger.warning(f"🗑️ Plantão excluído: {id}")
+        current_app.logger.warning(f"🗑️ Plantão excluído com sucesso: {id}")
         return jsonify({"ok": True, "message": "Plantão excluído com sucesso."}), 200
 
     except SQLAlchemyError as e:
