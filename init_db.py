@@ -25,12 +25,13 @@ from config import Config
 # =========================================================
 BASE_DIR = Path(__file__).resolve().parent
 SQL_FILE = BASE_DIR / "escala360.sql"
-DB_FILE = BASE_DIR / Config.DB_NAME
-LOG_FILE = BASE_DIR / "logs" / "escala360.log"
+DB_FILE = Path(Config.DB_PATH)         # ✅ Correção: usa o caminho absoluto da Config
+LOG_FILE = Path(Config.LOG_FILE)       # ✅ Correção: usa o log configurado
 
 # =========================================================
 # 🧾 Logging
 # =========================================================
+os.makedirs(LOG_FILE.parent, exist_ok=True)
 logging.basicConfig(
     filename=LOG_FILE,
     level=getattr(logging, Config.LOG_LEVEL.upper(), logging.INFO),
@@ -56,8 +57,8 @@ def init_database():
             print("✅ Estrutura ORM criada com sucesso.")
             logger.info("Estrutura ORM criada com sucesso.")
         else:
-            print("ℹ️ Banco já existe. Verificando necessidade de importação...")
-            logger.info("Banco já existe. Verificando necessidade de importação...")
+            print(f"ℹ️ Banco já existe em {DB_FILE}. Verificando necessidade de importação...")
+            logger.info(f"Banco já existe em {DB_FILE}. Verificando necessidade de importação...")
 
         # 2️⃣ Importa o SQL inicial apenas se o banco estiver vazio
         if SQL_FILE.exists():
