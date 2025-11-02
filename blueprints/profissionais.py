@@ -2,11 +2,11 @@
 ===========================================================
 ESCALA360 - Blueprint: Profissionais
 Autor: Anderson de Matos Guimarães
-Data: 31/10/2025
+Data: 02/11/2025
 ===========================================================
 
 Descrição:
-Gerencia os profissionais de saúde do sistema Escala360,
+Gerencia os profissionais do sistema Escala360,
 permitindo cadastro, listagem, edição e exclusão.
 
 Base de dados: Tabela 'profissionais' (ver escala360.sql)
@@ -20,8 +20,8 @@ Rotas principais:
 """
 
 from flask import Blueprint, jsonify, request, render_template, current_app
-from models import db, Profissional  # ✅ novo modelo ajustado
-from sqlalchemy.exc import SQLAlchemyError
+from models import db, Profissional
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 profissionais_bp = Blueprint("profissionais_bp", __name__, url_prefix="/profissionais")
 
@@ -57,9 +57,33 @@ def listar_profissionais():
         ]
         current_app.logger.info(f"📋 {len(data)} profissionais listados.")
         return jsonify(data), 200
+
     except SQLAlchemyError as e:
         current_app.logger.error(f"❌ Erro ao listar profissionais: {e}")
         return jsonify({"ok": False, "error": str(e)}), 500
+
+
+# =========================================================
+# 🔍 Obter profissional por ID (GET)
+# =========================================================
+@profissionais_bp.get("/api/<int:id>")
+def obter_profissional(id):
+    """Retorna os dados de um profissional específico (usado na edição)."""
+    try:
+        p = Profissional.query.get_or_404(id)
+        return jsonify(
+            {
+                "id": p.id,
+                "nome": p.nome,
+                "cargo": p.cargo,
+                "email": p.email,
+                "telefone": p.telefone,
+                "ativo": p.ativo,
+            }
+        ), 200
+    except SQLAlchemyError as e:
+        current_app.logger.error(f"❌ Erro ao buscar profissional {id}: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 # =========================================================
@@ -67,17 +91,7 @@ def listar_profissionais():
 # =========================================================
 @profissionais_bp.post("/api")
 def criar_profissional():
-    """
-    Cria um novo profissional.
-    Exemplo de payload:
-    {
-        "nome": "Ana Souza",
-        "cargo": "Enfermeira",
-        "email": "ana.souza@example.com",
-        "telefone": "11999990001",
-        "ativo": true
-    }
-    """
+    """Cria um novo profissional."""
     payload = request.get_json(silent=True) or {}
     try:
         nome = payload.get("nome")
@@ -88,6 +102,13 @@ def criar_profissional():
 
         if not nome or not cargo or not email:
             return jsonify({"ok": False, "error": "Campos obrigatórios ausentes."}), 400
+
+        if "@" not in email or "." not in email:
+            return jsonify({"ok": False, "error": "Formato de e-mail inválido."}), 400
+
+        # Evita duplicidade de e-mail
+        if Profissional.query.filter_by(email=email).first():
+            return jsonify({"ok": False, "error": "E-mail já cadastrado."}), 400
 
         novo_prof = Profissional(
             nome=nome,
@@ -102,6 +123,11 @@ def criar_profissional():
         current_app.logger.info(f"✅ Profissional criado: {novo_prof.nome}")
         return jsonify({"ok": True, "id": novo_prof.id}), 201
 
+    except IntegrityError:
+        db.session.rollback()
+        current_app.logger.error(f"⚠️ E-mail duplicado detectado: {email}")
+        return jsonify({"ok": False, "error": "E-mail já cadastrado."}), 400
+
     except SQLAlchemyError as e:
         db.session.rollback()
         current_app.logger.error(f"❌ Erro ao criar profissional: {e}")
@@ -113,7 +139,7 @@ def criar_profissional():
 # =========================================================
 @profissionais_bp.put("/api/<int:id>")
 def atualizar_profissional(id):
-    """Atualiza os dados de um profissional."""
+    """Atualiza os dados de um profissional existente."""
     payload = request.get_json(silent=True) or {}
     try:
         prof = Profissional.query.get_or_404(id)
