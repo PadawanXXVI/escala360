@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}ESCALA360{% endblock %}</title>
+
+    <!-- Favicon -->
+    <link rel="icon" href="{{ url_for('static', filename='img/favicon.png') }}" />
+
+    <!-- Tailwind e FontAwesome -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script
+      src="https://kit.fontawesome.com/4d4e58d1b4.js"
+      crossorigin="anonymous"
+    ></script>
+
+    <!-- CSS customizado -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/custom.css') }}"
+    />
+  </head>
+
+  <body
+    class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100 transition-colors"
+  >
+    <!-- Navbar -->
+    {% include '_navbar.html' %}
+
+    <!-- Toasts -->
+    {% include '_toasts.html' %}
+
+    <!-- Conteúdo principal -->
+    <main class="container mx-auto px-4 py-6">
+      {% block content %}{% endblock %}
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="text-center text-sm py-4 text-gray-500">
+      <p>
+        ESCALA360 © {{ now().year }} · Sistema de Gestão de Escalas e
+        Produtividade
+      </p>
+    </footer>
+
+    <!-- Scripts globais -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

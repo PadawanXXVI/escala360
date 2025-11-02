@@ -1,0 +1,25 @@
+<nav
+  class="bg-indigo-700 text-white px-6 py-3 flex items-center justify-between shadow-md"
+>
+  <div class="flex items-center gap-2">
+    <i class="fas fa-calendar-check text-xl"></i>
+    <span class="font-semibold text-lg">ESCALA360</span>
+  </div>
+
+  <div class="flex gap-2">
+    <a href="{{ url_for('index') }}" class="btn-nav">Painel</a>
+    <a href="{{ url_for('profissionais_bp.listar_profissionais') }}" class="btn-nav">Profissionais</a>
+    <a href="{{ url_for('plantoes_bp.listar_plantoes') }}" class="btn-nav">Plantões</a>
+    <a href="{{ url_for('escalas_bp.listar_escalas') }}" class="btn-nav">Escalas</a>
+    <a href="{{ url_for('substituicoes_bp.listar_substituicoes') }}" class="btn-nav">Substituições</a>
+    <a href="{{ url_for('auditoria_bp.listar_auditoria') }}" class="btn-nav">Auditoria</a>
+  </div>
+
+  <button
+    id="dark-mode-toggle"
+    class="ml-4 text-white hover:text-yellow-400 transition-colors"
+    title="Alternar modo escuro"
+  >
+    <i class="fas fa-moon"></i>
+  </button>
+</nav>
