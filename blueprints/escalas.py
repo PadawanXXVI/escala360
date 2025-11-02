@@ -26,7 +26,7 @@ escalas_bp = Blueprint("escalas_bp", __name__, url_prefix="/escalas")
 @escalas_bp.route("/")
 def view_escalas():
     """Renderiza a página de gestão de escalas (modo CRUD futuro)."""
-    profissionais = Profissional.query.filter_by(ativo=True).all()
+    profissionais = Profissional.query.filter_by(ativo=True).order_by(Profissional.nome.asc()).all()
     plantoes = Plantao.query.order_by(Plantao.data.asc()).all()
     current_app.logger.info("🗓️ Acesso à página de gestão de escalas.")
     return render_template(
@@ -43,22 +43,16 @@ def view_escalas():
 def dashboard():
     """Retorna dados consolidados para o Painel de Produtividade (BI)."""
     try:
-        # Contagens básicas
         total_profissionais = db.session.query(func.count(Profissional.id)).scalar() or 0
         total_plantoes = db.session.query(func.count(Plantao.id)).scalar() or 0
         total_escalas = db.session.query(func.count(Escala.id)).scalar() or 0
         total_substituicoes = db.session.query(func.count(Substituicao.id)).scalar() or 0
 
-        # Plantões vagos = total_plantoes - escalas
         total_vagos = max(total_plantoes - total_escalas, 0)
-
-        # Produtividade = (escalas preenchidas / total de plantões) × 100
         produtividade = round((total_escalas / total_plantoes * 100), 2) if total_plantoes else 0
 
-        # Geração de gráfico dinâmico (mock caso não haja dados)
-        dias_semana = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
         grafico = {
-            "dias": dias_semana,
+            "dias": ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"],
             "alocados": [12, 14, 11, 15, 13, 9, 6],
             "vagos": [3, 2, 4, 1, 2, 3, 5],
             "substituicoes": [1, 0, 2, 1, 1, 0, 1],
@@ -66,6 +60,8 @@ def dashboard():
 
         dados = {
             "kpis": {
+                "profissionais": total_profissionais,
+                "plantoes": total_plantoes,
                 "alocados": total_escalas,
                 "vagos": total_vagos,
                 "substituicoes": total_substituicoes,
@@ -74,7 +70,10 @@ def dashboard():
             "grafico": grafico,
         }
 
-        current_app.logger.info("📊 Dados do Painel BI carregados com sucesso.")
+        current_app.logger.info(
+            f"📊 Dashboard BI carregado: {total_profissionais} profs, {total_plantoes} plantoes, "
+            f"{total_escalas} escalas, {total_substituicoes} substituições."
+        )
         return jsonify(dados), 200
 
     except SQLAlchemyError as e:
@@ -98,18 +97,18 @@ def listar_escalas():
 
         data = [
             {
-                "id": e.Escala.id,
-                "profissional": e.Profissional.nome,
-                "cargo": e.Profissional.cargo or "-",
-                "data": e.Plantao.data.strftime("%Y-%m-%d"),
-                "hora_inicio": e.Plantao.hora_inicio.strftime("%H:%M"),
-                "hora_fim": e.Plantao.hora_fim.strftime("%H:%M"),
-                "status": e.Escala.status,
+                "id": e.id,
+                "profissional": p.nome,
+                "cargo": p.cargo or "-",
+                "data": pl.data.strftime("%Y-%m-%d"),
+                "hora_inicio": pl.hora_inicio.strftime("%H:%M"),
+                "hora_fim": pl.hora_fim.strftime("%H:%M"),
+                "status": e.status,
             }
-            for e in escalas
+            for e, p, pl in escalas
         ]
 
-        current_app.logger.info("📋 Listagem de escalas gerada com sucesso.")
+        current_app.logger.info(f"📋 {len(data)} escalas listadas com sucesso.")
         return jsonify(data), 200
 
     except SQLAlchemyError as e:
