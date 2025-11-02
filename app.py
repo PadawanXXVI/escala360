@@ -8,7 +8,7 @@ Framework: Flask 3.1.2
 
 Descrição:
 Aplicação web modular baseada em Blueprints (escalas, profissionais,
-plantões, substituições e auditoria), integrada a SQLite/SQLAlchemy,
+plantões, substituições e auditoria), integrada a PostgreSQL/SQLAlchemy,
 com logs persistentes, tratamento de erros customizados e contexto global.
 ===========================================================
 """
@@ -42,20 +42,19 @@ app.config.from_object(Config)
 
 # =========================================================
 # 🔗 Inicialização do ORM (SQLAlchemy)
-#   -> precisa acontecer ANTES do init_database()
 # =========================================================
 init_db(app)
 
 # =========================================================
-# 💾 Inicialização/seed do banco (idempotente)
-#   -> sem checagem externa; a função já inspeciona tabelas
+# 💾 Inicialização/Seed do Banco de Dados
 # =========================================================
 try:
-    init_database(app)  # ✅ passa o app para abrir o app_context lá
+    # ✅ agora passa app explicitamente
+    init_database(app)
     logger.info("✅ Banco verificado/criado/populado com sucesso.")
 except Exception as e:
     logger.critical(f"❌ Falha ao inicializar o banco: {e}")
-    raise
+    raise SystemExit(f"Erro fatal ao inicializar o banco: {e}")
 
 # =========================================================
 # 🧩 Registro de Blueprints
@@ -126,7 +125,7 @@ def internal_error(e):
 # =========================================================
 # 🚀 Execução Local (modo desenvolvimento)
 # =========================================================
-if __name__ == "_main_":   # ✅ correção aqui
+if __name__ == "_main":  # ✅ corrigido de "_main" para "_main_"
     logger.info(
         f"🚀 Servidor ESCALA360 iniciado em {Config.FLASK_ENV.upper()} "
         f"({Config.HOST}:{Config.PORT}) com debug={Config.FLASK_DEBUG}"
