@@ -8,22 +8,29 @@ Framework: Flask 3.1.2
 
 Descrição:
 Aplicação web modular baseada em Blueprints (escalas, profissionais,
-plantões, substituições e auditoria), integrada a PostgreSQL/SQLAlchemy,
-com logs persistentes, tratamento de erros customizados e contexto global.
+plantões, substituições e auditoria), integrada ao PostgreSQL via SQLAlchemy,
+com logs persistentes, tratamento de erros customizados e painel BI.
 ===========================================================
 """
 
 import os
 import logging
 from datetime import datetime
-from pathlib import Path
 from flask import Flask, render_template, jsonify, request
 from config import Config
 from models import init_app as init_db
-from init_database import init_database  # ✅ agora sem import circular
+from init_database import init_database
+
 
 # =========================================================
-# 🧾 Logging - Configuração inicial
+# 🔧 Inicialização da Aplicação Flask
+# =========================================================
+app = Flask(__name__)
+app.config.from_object(Config)
+
+
+# =========================================================
+# 🧾 Logging
 # =========================================================
 os.makedirs(os.path.dirname(Config.LOG_FILE), exist_ok=True)
 logging.basicConfig(
@@ -33,28 +40,20 @@ logging.basicConfig(
     datefmt="%d/%m/%Y %H:%M:%S",
 )
 logger = logging.getLogger("ESCALA360")
+logger.info("🚀 Iniciando aplicação ESCALA360...")
+
 
 # =========================================================
-# 🔧 Inicialização da Aplicação Flask
-# =========================================================
-app = Flask(__name__)
-app.config.from_object(Config)
-
-# =========================================================
-# 🔗 Inicialização do ORM (SQLAlchemy)
-# =========================================================
-init_db(app)
-
-# =========================================================
-# 💾 Inicialização/Seed do Banco de Dados
+# 💾 Banco de Dados (PostgreSQL)
 # =========================================================
 try:
-    # ✅ agora passa app explicitamente
+    init_db(app)
     init_database(app)
-    logger.info("✅ Banco verificado/criado/populado com sucesso.")
+    logger.info("✅ Banco de dados PostgreSQL conectado e inicializado com sucesso.")
 except Exception as e:
-    logger.critical(f"❌ Falha ao inicializar o banco: {e}")
-    raise SystemExit(f"Erro fatal ao inicializar o banco: {e}")
+    logger.critical(f"❌ Falha crítica ao inicializar o banco de dados: {e}")
+    raise
+
 
 # =========================================================
 # 🧩 Registro de Blueprints
@@ -74,8 +73,8 @@ try:
 
     logger.info("🧩 Blueprints registrados com sucesso.")
 except Exception as e:
-    logger.error(f"❌ Falha ao registrar blueprints: {e}")
-    raise
+    logger.warning(f"⚠ Nenhum blueprint encontrado ou erro ao registrar: {e}")
+
 
 # =========================================================
 # 🕓 Contexto Global (para {{ now() }} em templates Jinja)
@@ -84,30 +83,37 @@ except Exception as e:
 def inject_now():
     return {"now": datetime.now}
 
-# =========================================================
-# 🔹 Rotas principais (core)
-# =========================================================
-@app.get("/")
-def index():
-    logger.info("🟢 Acesso ao Painel de Produtividade (index.html)")
-    return render_template("index.html", title="Painel de Produtividade – Escala360")
 
-@app.get("/api/status")
+# =========================================================
+# 🌐 Rotas Principais
+# =========================================================
+@app.route("/")
+def index():
+    """Painel principal do sistema."""
+    logger.info("🟢 Acesso ao painel principal (index.html)")
+    return render_template("index.html", title="Painel de Produtividade – ESCALA360")
+
+
+@app.route("/api/status")
 def status():
-    logger.info("🔍 Verificação de status do sistema")
+    """Rota de monitoramento (health check)."""
     return jsonify(
         {
             "status": "online",
             "app": Config.APP_NAME,
             "version": Config.APP_VERSION,
-            "environment": getattr(Config, "FLASK_ENV", "production"),
             "author": Config.AUTHOR,
+            "database": Config.DB_NAME,
+            "engine": Config.DB_ENGINE,
         }
     )
 
-@app.get("/erro500")
+
+@app.route("/erro500")
 def erro_teste():
-    raise Exception("Erro interno simulado para testes do template 500.html.")
+    """Simula erro interno para testar o template 500.html."""
+    raise Exception("Erro interno simulado para testes.")
+
 
 # =========================================================
 # ❗ Tratamento de Erros Customizados
@@ -115,19 +121,20 @@ def erro_teste():
 @app.errorhandler(404)
 def page_not_found(e):
     logger.warning(f"⚠ Erro 404 - Página não encontrada: {request.path}")
-    return render_template("404.html", title="Página não encontrada – Escala360"), 404
+    return render_template("404.html", title="Página não encontrada – ESCALA360"), 404
+
 
 @app.errorhandler(500)
 def internal_error(e):
     logger.error(f"❌ Erro 500 - Falha interna: {e}")
-    return render_template("500.html", title="Erro interno – Escala360"), 500
+    return render_template("500.html", title="Erro interno – ESCALA360"), 500
+
 
 # =========================================================
-# 🚀 Execução Local (modo desenvolvimento)
+# 🚀 Execução Local
 # =========================================================
-if __name__ == "_main":  # ✅ corrigido de "_main" para "_main_"
+if __name__ == "_main_":
     logger.info(
-        f"🚀 Servidor ESCALA360 iniciado em {Config.FLASK_ENV.upper()} "
-        f"({Config.HOST}:{Config.PORT}) com debug={Config.FLASK_DEBUG}"
+        f"🚀 Servidor ESCALA360 iniciado ({Config.HOST}:{Config.PORT}) - Ambiente: {Config.FLASK_ENV.upper()}"
     )
     app.run(debug=Config.FLASK_DEBUG, host=Config.HOST, port=Config.PORT)
