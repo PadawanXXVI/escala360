@@ -2,7 +2,7 @@
 ===========================================================
 ESCALA360 - Inicialização do Banco de Dados
 Autor: Anderson de Matos Guimarães
-Data: 31/10/2025
+Data: 02/11/2025
 ===========================================================
 
 Descrição:
@@ -16,7 +16,6 @@ import os
 import logging
 from pathlib import Path
 from sqlalchemy import text, inspect
-from app import app
 from models import db
 from config import Config
 
@@ -43,17 +42,21 @@ logger = logging.getLogger(__name__)
 # =========================================================
 # ⚙ Função principal
 # =========================================================
-def init_database():
-    """Cria o banco de dados e importa o script SQL se necessário."""
+def init_database(app):
+    """
+    Cria o banco de dados e importa o script SQL inicial, se necessário.
+    Essa função é idempotente — só cria/popula se o banco estiver vazio.
+    """
     with app.app_context():
         inspector = inspect(db.engine)
 
-        # ⚠ Obter tabelas existentes só se o banco existir
+        # Obtém tabelas existentes, se o banco já existir
         existing_tables = []
         if DB_FILE.exists():
             try:
                 existing_tables = inspector.get_table_names()
-            except Exception:
+            except Exception as e:
+                logger.warning(f"⚠ Falha ao inspecionar tabelas existentes: {e}")
                 existing_tables = []
 
         # 1️⃣ Criação inicial se o banco não existir
@@ -64,10 +67,10 @@ def init_database():
             print("✅ Estrutura ORM criada com sucesso.")
             logger.info("Estrutura ORM criada com sucesso.")
         else:
-            print(f"ℹ Banco já existe em {DB_FILE}. Verificando necessidade de importação...")
-            logger.info(f"Banco já existe em {DB_FILE}. Verificando necessidade de importação...")
+            print(f"ℹ Banco localizado em {DB_FILE}.")
+            logger.info(f"Banco localizado em {DB_FILE}.")
 
-        # 2️⃣ Importa o SQL inicial apenas se o banco estiver vazio
+        # 2️⃣ Importa o SQL inicial se o banco estiver vazio
         if SQL_FILE.exists():
             if existing_tables:
                 print("ℹ Banco já contém tabelas. Ignorando importação do SQL inicial.")
@@ -79,18 +82,17 @@ def init_database():
                 with open(SQL_FILE, "r", encoding="utf-8") as f:
                     sql_script = f.read()
 
-                # Divide o script e executa apenas comandos válidos
                 for statement in sql_script.split(";"):
                     stmt = statement.strip()
                     if stmt:
                         try:
                             db.session.execute(text(stmt))
                         except Exception as e:
-                            logger.error(f"Erro ao executar comando SQL: {stmt[:80]}... → {e}")
-                            print(f"⚠ Erro ao executar comando SQL: {e}")
+                            logger.error(f"Erro ao executar SQL: {stmt[:100]}... → {e}")
+                            print(f"⚠ Erro ao executar SQL: {e}")
 
                 db.session.commit()
-                print("✅ Dados importados com sucesso do arquivo escala360.sql.")
+                print("✅ Dados importados com sucesso de escala360.sql.")
                 logger.info("Dados importados com sucesso do arquivo escala360.sql.")
         else:
             print("⚠ Arquivo escala360.sql não encontrado. Nenhum dado inicial foi importado.")
@@ -99,9 +101,9 @@ def init_database():
         print("💾 Banco de dados pronto para uso.")
         logger.info("Banco de dados pronto para uso.")
 
-
 # =========================================================
 # 🚀 Execução direta (via terminal)
 # =========================================================
 if __name__ == "_main_":
-    init_database()
+    from app import app  # import tardio para evitar import circular
+    init_database(app)
