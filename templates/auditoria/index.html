@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Auditoria – ESCALA360{% endblock %}
+
+{% block content %}
+<header class="mb-6">
+  <h1 class="text-2xl font-semibold mb-1 flex items-center gap-2">
+    <i class="fas fa-clipboard-list text-indigo-600"></i>
+    Registro de Auditoria
+  </h1>
+  <p class="text-gray-600 dark:text-gray-400">
+    Acompanhe todas as ações realizadas no sistema: criações, atualizações, exclusões e aprovações.
+  </p>
+</header>
+
+<!-- FILTROS DE PESQUISA -->
+<section aria-labelledby="filtros-auditoria" class="mb-8">
+  <h2 id="filtros-auditoria" class="sr-only">Filtros de Auditoria</h2>
+
+  <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
+    <form id="form-filtros" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+      <div>
+        <label for="entidade" class="block font-medium">Entidade</label>
+        <select id="entidade" name="entidade" class="input-field">
+          <option value="">Todas</option>
+          <option value="profissional">Profissional</option>
+          <option value="plantao">Plantão</option>
+          <option value="escala">Escala</option>
+          <option value="substituicao">Substituição</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="acao" class="block font-medium">Ação</label>
+        <select id="acao" name="acao" class="input-field">
+          <option value="">Todas</option>
+          <option value="criado">Criado</option>
+          <option value="atualizado">Atualizado</option>
+          <option value="excluído">Excluído</option>
+          <option value="aprovado">Aprovado</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="usuario" class="block font-medium">Usuário</label>
+        <input
+          type="text"
+          id="usuario"
+          name="usuario"
+          class="input-field"
+          placeholder="Filtrar por usuário..."
+        />
+      </div>
+
+      <div class="flex justify-end">
+        <button
+          type="submit"
+          class="btn-primary flex items-center gap-2"
+          title="Aplicar filtros"
+        >
+          <i class="fas fa-filter"></i> Filtrar
+        </button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- TABELA DE AUDITORIA -->
+<section aria-labelledby="tabela-auditoria">
+  <h2 id="tabela-auditoria" class="sr-only">Tabela de Auditoria</h2>
+
+  <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-semibold">Registros de Auditoria</h3>
+      <button
+        id="btn-recarregar"
+        class="btn-outline flex items-center gap-2"
+        title="Atualizar registros"
+      >
+        <i class="fas fa-sync-alt"></i> Atualizar
+      </button>
+    </div>
+
+    <div class="table-container">
+      <table class="w-full table-auto">
+        <thead>
+          <tr class="text-left border-b border-gray-300 dark:border-gray-700">
+            <th>ID</th>
+            <th>Entidade</th>
+            <th>Ação</th>
+            <th>Usuário</th>
+            <th>Data e Hora</th>
+          </tr>
+        </thead>
+        <tbody id="tabela-auditoria-body">
+          <tr>
+            <td colspan="5" class="text-center py-4 text-gray-500">
+              Carregando registros...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", async () => {
+    listarAuditoria();
+
+    document
+      .getElementById("form-filtros")
+      .addEventListener("submit", async (e) => {
+        e.preventDefault();
+        await listarAuditoria();
+      });
+
+    document
+      .getElementById("btn-recarregar")
+      .addEventListener("click", listarAuditoria);
+  });
+</script>
+{% endblock %}
