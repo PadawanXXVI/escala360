@@ -1,25 +1,56 @@
-<nav
-  class="bg-indigo-700 text-white px-6 py-3 flex items-center justify-between shadow-md"
->
-  <div class="flex items-center gap-2">
-    <i class="fas fa-calendar-check text-xl"></i>
-    <span class="font-semibold text-lg">ESCALA360</span>
+<nav class="navbar px-6 py-3 flex items-center justify-between shadow-sm">
+  <!-- 🔹 Logo e título -->
+  <div class="brand">
+    <i class="fas fa-calendar-check text-indigo-600 text-xl"></i>
+    <span>ESCALA360</span>
+    <span class="badge">v1.0</span>
   </div>
 
-  <div class="flex gap-2">
-    <a href="{{ url_for('index') }}" class="btn-nav">Painel</a>
-    <a href="{{ url_for('profissionais_bp.listar_profissionais') }}" class="btn-nav">Profissionais</a>
-    <a href="{{ url_for('plantoes_bp.listar_plantoes') }}" class="btn-nav">Plantões</a>
-    <a href="{{ url_for('escalas_bp.listar_escalas') }}" class="btn-nav">Escalas</a>
-    <a href="{{ url_for('substituicoes_bp.listar_substituicoes') }}" class="btn-nav">Substituições</a>
-    <a href="{{ url_for('auditoria_bp.listar_auditoria') }}" class="btn-nav">Auditoria</a>
+  <!-- 🔹 Navegação -->
+  <div class="nav-actions">
+    <a href="{{ url_for('index') }}" class="nav-btn">
+      <i class="fas fa-chart-line"></i> Painel
+    </a>
+    <a href="{{ url_for('profissionais_bp.listar_profissionais') }}" class="nav-btn">
+      <i class="fas fa-user-md"></i> Profissionais
+    </a>
+    <a href="{{ url_for('plantoes_bp.listar_plantoes') }}" class="nav-btn">
+      <i class="fas fa-hospital-symbol"></i> Plantões
+    </a>
+    <a href="{{ url_for('escalas_bp.listar_escalas') }}" class="nav-btn">
+      <i class="fas fa-calendar-alt"></i> Escalas
+    </a>
+    <a href="{{ url_for('substituicoes_bp.listar_substituicoes') }}" class="nav-btn">
+      <i class="fas fa-exchange-alt"></i> Substituições
+    </a>
+    <a href="{{ url_for('auditoria_bp.listar_auditoria') }}" class="nav-btn">
+      <i class="fas fa-shield-alt"></i> Auditoria
+    </a>
   </div>
 
+  <!-- 🔹 Botão de modo escuro -->
   <button
     id="dark-mode-toggle"
-    class="ml-4 text-white hover:text-yellow-400 transition-colors"
+    class="icon-btn text-gray-600 dark:text-gray-300 hover:text-indigo-500"
     title="Alternar modo escuro"
   >
     <i class="fas fa-moon"></i>
   </button>
 </nav>
+
+<script>
+  // Alternância entre modo claro/escuro
+  const toggle = document.getElementById("dark-mode-toggle");
+  toggle.addEventListener("click", () => {
+    document.documentElement.classList.toggle("dark");
+    localStorage.setItem(
+      "theme",
+      document.documentElement.classList.contains("dark") ? "dark" : "light"
+    );
+  });
+
+  // Mantém a preferência do usuário
+  if (localStorage.getItem("theme") === "dark") {
+    document.documentElement.classList.add("dark");
+  }
+</script>
