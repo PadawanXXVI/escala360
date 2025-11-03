@@ -133,7 +133,7 @@ def internal_error(e):
 # =========================================================
 # 🚀 Execução Local
 # =========================================================
-if __name__ == "_main_":
+if __name__ == "__main__":
     logger.info(
         f"🚀 Servidor ESCALA360 iniciado ({Config.HOST}:{Config.PORT}) - Ambiente: {Config.FLASK_ENV.upper()}"
     )
