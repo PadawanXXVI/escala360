@@ -1,34 +1,31 @@
 <nav class="navbar px-6 py-3 flex items-center justify-between shadow-sm">
-  <!-- 🔹 Logo e título -->
   <div class="brand">
     <i class="fas fa-calendar-check text-indigo-600 text-xl"></i>
     <span>ESCALA360</span>
     <span class="badge">v1.0</span>
   </div>
 
-  <!-- 🔹 Navegação -->
   <div class="nav-actions">
     <a href="{{ url_for('index') }}" class="nav-btn">
       <i class="fas fa-chart-line"></i> Painel
     </a>
-    <a href="{{ url_for('profissionais_bp.listar') }}" class="nav-btn">
+    <a href="{{ url_for('profissionais_bp.listar_profissionais') }}" class="nav-btn">
       <i class="fas fa-user-md"></i> Profissionais
     </a>
-    <a href="{{ url_for('plantoes_bp.listar') }}" class="nav-btn">
+    <a href="{{ url_for('plantoes_bp.listar_plantoes') }}" class="nav-btn">
       <i class="fas fa-hospital-symbol"></i> Plantões
     </a>
-    <a href="{{ url_for('escalas_bp.listar') }}" class="nav-btn">
+    <a href="{{ url_for('escalas_bp.listar_escalas') }}" class="nav-btn">
       <i class="fas fa-calendar-alt"></i> Escalas
     </a>
-    <a href="{{ url_for('substituicoes_bp.listar') }}" class="nav-btn">
+    <a href="{{ url_for('substituicoes_bp.listar_substituicoes') }}" class="nav-btn">
       <i class="fas fa-exchange-alt"></i> Substituições
     </a>
-    <a href="{{ url_for('auditoria_bp.listar') }}" class="nav-btn">
+    <a href="{{ url_for('auditoria_bp.listar_auditoria') }}" class="nav-btn">
       <i class="fas fa-shield-alt"></i> Auditoria
     </a>
   </div>
 
-  <!-- 🔹 Botão de modo escuro -->
   <button
     id="dark-mode-toggle"
     class="icon-btn text-gray-600 dark:text-gray-300 hover:text-indigo-500"
@@ -39,7 +36,6 @@
 </nav>
 
 <script>
-  // Alternância entre modo claro/escuro
   const toggle = document.getElementById("dark-mode-toggle");
   toggle.addEventListener("click", () => {
     document.documentElement.classList.toggle("dark");
@@ -49,7 +45,6 @@
     );
   });
 
-  // Mantém a preferência do usuário
   if (localStorage.getItem("theme") === "dark") {
     document.documentElement.classList.add("dark");
   }
