@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2025-11-03T00:00:00.000Z" agent="Escala360 BPMN Generator" version="24.0.4" type="device">
+  <diagram name="BPMN - Substituição Horizontal">
+    <mxGraphModel dx="1680" dy="880" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2970" pageHeight="2100" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        
+        <!-- Evento inicial -->
+        <mxCell id="start" value="Início&#xa;Profissional ausente detectado" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#A7C7E7;strokeColor=#4A90E2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="360" width="120" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- Solicitação -->
+        <mxCell id="solicitacao" value="Profissional&#xa;Submete solicitação de substituição" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D0E6A5;strokeColor=#82B366;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="220" y="350" width="200" height="100" as="geometry"/>
+        </mxCell>
+
+        <!-- Lógica automática -->
+        <mxCell id="logica" value="Sistema Escala360&#xa;Executa lógica de sugestão automática" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFD580;strokeColor=#E6AC00;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="480" y="350" width="220" height="100" as="geometry"/>
+        </mxCell>
+
+        <!-- Decisão do supervisor -->
+        <mxCell id="decisao" value="Supervisor&#xa;Aprova substituição?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#F8C471;strokeColor=#B9770E;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="760" y="360" width="120" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- Caminho aprovado -->
+        <mxCell id="aprovado" value="Sistema&#xa;Atualiza escala e auditoria&#xa;Envia notificações" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#AED6F1;strokeColor=#2874A6;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="940" y="200" width="220" height="100" as="geometry"/>
+        </mxCell>
+
+        <!-- Caminho recusado -->
+        <mxCell id="recusado" value="Supervisor&#xa;Solicita nova sugestão" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5B7B1;strokeColor=#C0392B;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="940" y="480" width="220" height="100" as="geometry"/>
+        </mxCell>
+
+        <!-- Fim -->
+        <mxCell id="fim" value="Fim do processo" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#A7C7E7;strokeColor=#4A90E2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1240" y="360" width="120" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- Conectores -->
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" source="start" target="solicitacao" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" source="solicitacao" target="logica" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" source="logica" target="decisao" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e4" value="Sim" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;" edge="1" source="decisao" target="aprovado" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e5" value="Não" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;" edge="1" source="decisao" target="recusado" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" source="aprovado" target="fim" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e7" value="Nova análise" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=11;" edge="1" source="recusado" target="logica" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
