@@ -4,9 +4,9 @@ from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from dotenv import load_dotenv
 from pathlib import Path
 
-# -------------------------
-# Função 1 - Criação do banco
-# -------------------------
+# ================================================================
+# 🧠 Função 1 — Cria o banco de dados se não existir
+# ================================================================
 def create_database_if_not_exists(dbname, user, password, host, port):
     """Cria o banco de dados se ainda não existir."""
     conn = psycopg2.connect(
@@ -24,15 +24,15 @@ def create_database_if_not_exists(dbname, user, password, host, port):
     cur.close()
     conn.close()
 
-# -------------------------
-# Função 2 - Executar script SQL completo
-# -------------------------
+
+# ================================================================
+# ⚙️ Função 2 — Executa todas as instruções do arquivo SQL
+# ================================================================
 def execute_sql_file(dbname, user, password, host, port, sql_path):
-    """Executa cada instrução SQL do arquivo .sql separadamente."""
+    """Executa cada comando SQL do arquivo escala360.sql separadamente."""
     with open(sql_path, "r", encoding="utf-8") as f:
         sql_script = f.read()
 
-    # Divide as instruções com base no delimitador ";"
     commands = [cmd.strip() for cmd in sql_script.split(";") if cmd.strip()]
 
     conn = psycopg2.connect(
@@ -45,15 +45,39 @@ def execute_sql_file(dbname, user, password, host, port, sql_path):
             cur.execute(command)
         except Exception as e:
             print(f"⚠️ Erro ao executar comando: {e}")
-            print(f"Comando problemático: {command[:200]}...")  # Mostra só os 200 primeiros chars
+            print(f"Comando problemático (início): {command[:120]}...")
+
     conn.commit()
     cur.close()
     conn.close()
     print("📜 Script SQL completo executado com sucesso!")
 
-# -------------------------
-# Execução principal
-# -------------------------
+
+# ================================================================
+# 📊 Função 3 — Verifica e imprime contagem de registros
+# ================================================================
+def verificar_carga(dbname, user, password, host, port):
+    """Conta quantos registros existem em cada tabela principal."""
+    conn = psycopg2.connect(
+        dbname=dbname, user=user, password=password, host=host, port=port
+    )
+    cur = conn.cursor()
+
+    tabelas = ["profissionais", "plantoes", "escalas", "substituicoes", "auditoria"]
+    print("\n📊 Tabelas populadas:")
+
+    for tabela in tabelas:
+        cur.execute(f"SELECT COUNT(*) FROM {tabela};")
+        total = cur.fetchone()[0]
+        print(f"   {tabela}: {total} registros")
+
+    cur.close()
+    conn.close()
+
+
+# ================================================================
+# 🚀 Execução principal
+# ================================================================
 if __name__ == "__main__":
     load_dotenv()
 
@@ -67,5 +91,11 @@ if __name__ == "__main__":
     if not sql_file.exists():
         raise FileNotFoundError("❌ Arquivo escala360.sql não encontrado na raiz do projeto.")
 
+    # 1️⃣ Cria o banco (se necessário)
     create_database_if_not_exists(db, user, pwd, host, port)
+
+    # 2️⃣ Executa o script SQL completo
     execute_sql_file(db, user, pwd, host, port, sql_file)
+
+    # 3️⃣ Exibe contagem de registros nas tabelas
+    verificar_carga(db, user, pwd, host, port)
