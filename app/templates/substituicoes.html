@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Substituições — Escala360{% endblock %}
+
+{% block content %}
+<!-- ============================================================ -->
+<!-- 🔁 Página: Solicitações de Substituição -->
+<!-- ============================================================ -->
+<section class="text-center mb-4">
+  <h1 class="fw-bold text-primary">Solicitações de Substituição</h1>
+  <p class="text-muted">Visualize as trocas de profissionais e o status de cada substituição.</p>
+</section>
+
+<main class="container">
+  {% if substituicoes %}
+  <div class="table-responsive shadow-sm rounded">
+    <table class="table table-striped table-hover align-middle">
+      <thead class="table-primary">
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">Escala</th>
+          <th scope="col">Solicitante</th>
+          <th scope="col">Substituto</th>
+          <th scope="col">Data da Solicitação</th>
+          <th scope="col" class="text-center">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in substituicoes %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>{{ s.id_escala_original }}</td>
+          <td>{{ s.id_profissional_solicitante }}</td>
+          <td>{{ s.id_profissional_substituto }}</td>
+          <td>{{ s.data_solicitacao.strftime("%d/%m/%Y %H:%M") }}</td>
+          <td class="text-center">
+            {% if s.status == "pendente" %}
+              <span class="badge bg-warning text-dark">Pendente</span>
+            {% elif s.status == "aprovado" %}
+              <span class="badge bg-success">Aprovado</span>
+            {% elif s.status == "recusado" %}
+              <span class="badge bg-danger">Recusado</span>
+            {% else %}
+              <span class="badge bg-secondary">{{ s.status }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-center text-muted mt-4">Nenhuma solicitação de substituição cadastrada.</p>
+  {% endif %}
+</main>
+{% endblock %}
