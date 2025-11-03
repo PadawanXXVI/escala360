@@ -17,9 +17,5 @@
       "runtime": "python3.11",
       "maxDuration": 10
     }
-  },
-  "env": {
-    "FLASK_APP": "app.py",
-    "FLASK_ENV": "production"
-  }
+  ]
 }
