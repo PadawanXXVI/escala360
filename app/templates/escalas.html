@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Escalas — Escala360{% endblock %}
+
+{% block content %}
+<!-- ============================================================ -->
+<!-- 📋 Página: Visualização Geral das Escalas -->
+<!-- ============================================================ -->
+<section class="text-center mb-4">
+  <h1 class="fw-bold text-primary">Escalas Cadastradas</h1>
+  <p class="text-muted">Visualize as alocações de profissionais em cada plantão.</p>
+</section>
+
+<main class="container">
+  {% if escalas %}
+  <div class="table-responsive shadow-sm rounded">
+    <table class="table table-striped table-hover align-middle">
+      <thead class="table-primary">
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">Plantão</th>
+          <th scope="col">Profissional</th>
+          <th scope="col">Status</th>
+          <th scope="col">Data de Alocação</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in escalas %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>{{ e.id_plantao }}</td>
+          <td>{{ e.id_profissional }}</td>
+          <td>
+            {% if e.status == "ativo" %}
+              <span class="badge bg-success">Ativo</span>
+            {% elif e.status == "inativo" %}
+              <span class="badge bg-secondary">Inativo</span>
+            {% else %}
+              <span class="badge bg-warning text-dark">{{ e.status }}</span>
+            {% endif %}
+          </td>
+          <td>{{ e.data_alocacao.strftime("%d/%m/%Y %H:%M") }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-center text-muted mt-4">Nenhuma escala registrada no momento.</p>
+  {% endif %}
+</main>
+{% endblock %}
