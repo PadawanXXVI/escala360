@@ -1,16 +1,25 @@
 {
   "version": 2,
+  "builds": [
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "api/index.py"
+    }
+  ],
   "functions": {
     "api/index.py": {
-      "runtime": "python3.11"
+      "runtime": "python3.11",
+      "maxDuration": 10
     }
   },
-  "buildCommand": "",
-  "outputDirectory": ".",
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/api/index.py" }
-  ],
   "env": {
+    "FLASK_APP": "app.py",
     "FLASK_ENV": "production"
   }
 }
