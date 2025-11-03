@@ -1,0 +1,66 @@
+# =====================================
+# 🚫 GITIGNORE — Projeto Escala360
+# Flask + PostgreSQL + Ambiente Virtual
+# =====================================
+
+# Ambiente virtual
+venv/
+env/
+ENV/
+.venv/
+
+# Cache e metadados Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+*.egg-info/
+*.egg
+*.log
+
+# Banco de dados local
+*.sqlite3
+*.db
+
+# Configurações sensíveis
+.env
+*.key
+*.pem
+
+# Build, distribuição e dependências temporárias
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Arquivos temporários do sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs e editores
+.vscode/
+.idea/
+*.code-workspace
+
+# Relatórios, exportações e artefatos temporários
+*.csv
+*.xlsx
+*.xls
+*.pdf
+*.tmp
+*.bak
+
+# PyInstaller
+*.spec
+
+# Testes
+.coverage
+htmlcov/
+.tox/
+nosetests.xml
+coverage.xml
+.pytest_cache/
+.cache/
