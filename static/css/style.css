@@ -1,0 +1,145 @@
+/* ===============================================================
+   🎨 Estilos Gerais — Escala360
+   Sistema de Gestão de Escalas e Painel BI Interativo
+   =============================================================== */
+
+/* ------------------------------
+   🧩 Estrutura geral
+--------------------------------*/
+html, body {
+  height: 100%;
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+  background-color: #f8f9fa;
+  color: #212529;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ------------------------------
+   🧭 Navbar
+--------------------------------*/
+.navbar {
+  padding: 0.75rem 1rem;
+}
+
+.navbar-brand {
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.navbar-nav .nav-link {
+  font-weight: 500;
+  color: #e9ecef;
+  transition: color 0.2s ease-in-out;
+}
+
+.navbar-nav .nav-link:hover,
+.navbar-nav .nav-link.active {
+  color: #fff;
+  text-decoration: underline;
+}
+
+/* ------------------------------
+   📊 Cards do Painel BI
+--------------------------------*/
+.card {
+  border: none;
+  border-radius: 0.75rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+}
+
+.card-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #0d6efd;
+  margin-bottom: 1rem;
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+/* ------------------------------
+   🖼️ Gráficos
+--------------------------------*/
+#graficoBarras,
+#graficoPizza,
+#graficoLinha {
+  width: 100%;
+  height: 320px;
+}
+
+@media (max-width: 768px) {
+  #graficoBarras,
+  #graficoPizza,
+  #graficoLinha {
+    height: 260px;
+  }
+}
+
+/* ------------------------------
+   🧱 Layout responsivo geral
+--------------------------------*/
+main {
+  flex: 1;
+}
+
+section h1 {
+  font-size: 1.8rem;
+}
+
+section p {
+  font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+  section h1 {
+    font-size: 1.4rem;
+  }
+}
+
+/* ------------------------------
+   🦶 Rodapé
+--------------------------------*/
+footer {
+  background-color: #ffffff;
+  border-top: 1px solid #dee2e6;
+  font-size: 0.9rem;
+  color: #6c757d;
+}
+
+footer small {
+  letter-spacing: 0.3px;
+}
+
+/* ------------------------------
+   🧭 Botões e utilitários
+--------------------------------*/
+.btn-primary {
+  background-color: #0d6efd;
+  border: none;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.btn-primary:hover {
+  background-color: #0b5ed7;
+}
+
+.text-primary {
+  color: #0d6efd !important;
+}
+
+.text-muted {
+  color: #6c757d !important;
+}
