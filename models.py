@@ -32,7 +32,7 @@ def init_app(app):
 # 👩‍⚕ Modelo: Profissional
 # =========================================================
 class Profissional(db.Model):
-    _tablename_ = "profissionais"
+    __tablename__ = "profissionais"
 
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(255), nullable=False)
@@ -64,7 +64,7 @@ class Profissional(db.Model):
 # 🕒 Modelo: Plantão
 # =========================================================
 class Plantao(db.Model):
-    _tablename_ = "plantoes"
+    __tablename__ = "plantoes"
 
     id = db.Column(db.Integer, primary_key=True)
     data = db.Column(db.Date, nullable=False)
@@ -84,7 +84,7 @@ class Plantao(db.Model):
 # 📅 Modelo: Escala
 # =========================================================
 class Escala(db.Model):
-    _tablename_ = "escalas"
+    __tablename__ = "escalas"
 
     id = db.Column(db.Integer, primary_key=True)
     id_plantao = db.Column(db.Integer, db.ForeignKey("plantoes.id"), nullable=False)
@@ -105,7 +105,7 @@ class Escala(db.Model):
 # 🔁 Modelo: Substituição
 # =========================================================
 class Substituicao(db.Model):
-    _tablename_ = "substituicoes"
+    __tablename__ = "substituicoes"
 
     id = db.Column(db.Integer, primary_key=True)
     id_escala_original = db.Column(db.Integer, db.ForeignKey("escalas.id"), nullable=False)
@@ -135,7 +135,7 @@ class Substituicao(db.Model):
 # 🧾 Modelo: Auditoria
 # =========================================================
 class Auditoria(db.Model):
-    _tablename_ = "auditoria"
+    __tablename__ = "auditoria"
 
     id = db.Column(db.Integer, primary_key=True)
     entidade = db.Column(db.String(100), nullable=False)
@@ -146,3 +146,4 @@ class Auditoria(db.Model):
 
     def _repr_(self):
         return f"<Auditoria {self.entidade} {self.acao} por {self.usuario}>"
+    
