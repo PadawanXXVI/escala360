@@ -5,47 +5,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}ESCALA360{% endblock %}</title>
 
-    <!-- Favicon -->
+    <!-- 🔹 Favicon -->
     <link rel="icon" href="{{ url_for('static', filename='img/favicon.png') }}" />
 
-    <!-- Tailwind e FontAwesome -->
+    <!-- 🔹 Tailwind + FontAwesome -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script
       src="https://kit.fontawesome.com/4d4e58d1b4.js"
       crossorigin="anonymous"
     ></script>
 
-    <!-- CSS customizado -->
+    <!-- 🔹 CSS global do projeto -->
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename='css/custom.css') }}"
+      href="{{ url_for('static', filename='css/style.css') }}"
     />
+
+    <!-- 🔹 Plotly (para gráficos BI) -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   </head>
 
   <body
-    class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100 transition-colors"
+    class="transition-colors bg-[var(--bg)] text-[var(--text)]"
   >
-    <!-- Navbar -->
+    <!-- 🔸 Navbar -->
     {% include '_navbar.html' %}
 
-    <!-- Toasts -->
+    <!-- 🔸 Toasts -->
     {% include '_toasts.html' %}
 
-    <!-- Conteúdo principal -->
-    <main class="container mx-auto px-4 py-6">
+    <!-- 🔸 Conteúdo principal -->
+    <main class="container fade-in">
       {% block content %}{% endblock %}
     </main>
 
-    <!-- Rodapé -->
-    <footer class="text-center text-sm py-4 text-gray-500">
+    <!-- 🔸 Rodapé -->
+    <footer class="text-center text-sm py-6 muted">
       <p>
-        ESCALA360 © {{ now().year }} · Sistema de Gestão de Escalas e
-        Produtividade
+        ESCALA360 © {{ now().year }} · Sistema de Gestão de Escalas e Produtividade
       </p>
     </footer>
 
-    <!-- Scripts globais -->
+    <!-- 🔹 JS global -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    <!-- 🔹 Scripts específicos por página -->
     {% block scripts %}{% endblock %}
   </body>
 </html>
