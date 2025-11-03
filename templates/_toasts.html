@@ -1,6 +1,52 @@
+<!-- =========================================================
+     ESCALA360 - Toasts (Notificações Interativas)
+     Autor: Anderson de Matos Guimarães
+     Data: 02/11/2025
+     =========================================================
+     Descrição:
+     Contêiner centralizado de notificações dinâmicas (toasts),
+     injetadas via JavaScript (main.js).
+     ========================================================= -->
+
 <div
   id="toast-container"
   aria-live="polite"
   aria-atomic="true"
-  class="fixed top-4 right-4 flex flex-col gap-2 z-50"
+  class="fixed top-4 right-4 flex flex-col gap-3 z-50 max-w-sm"
 ></div>
+
+<!-- ✅ Estilo inline adicional (fallback caso CSS global falhe) -->
+<style>
+  .toast {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background-color: var(--toast-bg, #1e293b);
+    color: white;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  .toast.success {
+    background-color: #16a34a; /* Verde */
+  }
+  .toast.error {
+    background-color: #dc2626; /* Vermelho */
+  }
+  .toast.info {
+    background-color: #2563eb; /* Azul */
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>
