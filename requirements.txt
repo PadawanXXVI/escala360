@@ -3,11 +3,23 @@
 # Flask + SQLAlchemy + PostgreSQL + Plotly
 # ==========================================
 
+# --- Framework principal ---
 Flask==3.0.3
 Flask-SQLAlchemy==3.1.1
 Flask-Migrate==4.0.7
 SQLAlchemy==2.0.32
-psycopg2-binary==2.9.9
+
+# --- Banco de Dados ---
+# Use psycopg2 (compila com bibliotecas do PostgreSQL local)
+psycopg2==2.9.9
+
+# --- Configurações e utilidades ---
 python-dotenv==1.0.1
-plotly==5.24.1
 pandas==2.2.3
+
+# --- Visualização ---
+plotly==5.24.1
+
+# --- Compatibilidade e ferramentas auxiliares ---
+setuptools>=75.0.0
+wheel>=0.44.0
