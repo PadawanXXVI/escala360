@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Painel BI — Escala360{% endblock %}
+
+{% block content %}
+<!-- ============================================================ -->
+<!-- 🎛️ Painel de BI Interativo - Escala360 -->
+<!-- ============================================================ -->
+<section class="text-center mb-4">
+  <h1 class="fw-bold text-primary">Painel de BI — Escala360</h1>
+  <p class="text-muted">Análise em tempo real de profissionais, plantões e substituições</p>
+</section>
+
+<!-- ============================================================ -->
+<!-- 🔹 Cards dos gráficos -->
+<!-- ============================================================ -->
+<section class="row g-4">
+
+  <!-- 📊 Gráfico de Barras - Carga de Plantões por Profissional -->
+  <article class="col-12 col-md-6 col-lg-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <h5 class="card-title text-center text-primary">Plantões por Profissional</h5>
+        <div id="graficoBarras" role="img" aria-label="Gráfico de barras mostrando quantidade de plantões por profissional"></div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 🥧 Gráfico de Pizza - Status das Substituições -->
+  <article class="col-12 col-md-6 col-lg-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <h5 class="card-title text-center text-primary">Status das Substituições</h5>
+        <div id="graficoPizza" role="img" aria-label="Gráfico de pizza mostrando status das substituições"></div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 📈 Gráfico de Linha - Plantões por Dia -->
+  <article class="col-12 col-md-6 col-lg-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <h5 class="card-title text-center text-primary">Plantões por Dia</h5>
+        <div id="graficoLinha" role="img" aria-label="Gráfico de linha mostrando quantidade de plantões por dia"></div>
+      </div>
+    </div>
+  </article>
+</section>
+{% endblock %}
+
+
+{% block scripts %}
+<!-- ============================================================ -->
+<!-- 📊 Scripts dos gráficos Plotly.js -->
+<!-- ============================================================ -->
+<script>
+  // ===============================
+  // 📦 Dados vindos do Flask (convertidos via Jinja)
+  // ===============================
+  const cargaLabels = {{ carga_labels | tojson }};
+  const cargaValues = {{ carga_values | tojson }};
+
+  const pizzaLabels = {{ pizza_labels | tojson }};
+  const pizzaValues = {{ pizza_values | tojson }};
+
+  const linhaLabels = {{ linha_labels | tojson }};
+  const linhaValues = {{ linha_values | tojson }};
+
+  // ===============================
+  // 📊 Gráfico de Barras — Plantões por Profissional
+  // ===============================
+  if (cargaLabels.length > 0 && cargaValues.length > 0) {
+    const traceBarras = {
+      x: cargaLabels,
+      y: cargaValues,
+      type: 'bar',
+      marker: { color: '#0d6efd' },
+    };
+
+    const layoutBarras = {
+      margin: { t: 40, l: 60, r: 20, b: 100 },
+      title: { text: 'Plantões por Profissional', font: { size: 16 } },
+      xaxis: { tickangle: -45 },
+      yaxis: { title: 'Total de Plantões' },
+      responsive: true,
+    };
+
+    Plotly.newPlot('graficoBarras', [traceBarras], layoutBarras, { responsive: true });
+  } else {
+    document.getElementById('graficoBarras').innerHTML = '<p class="text-muted text-center mt-4">Sem dados disponíveis.</p>';
+  }
+
+  // ===============================
+  // 🥧 Gráfico de Pizza — Status das Substituições
+  // ===============================
+  if (pizzaLabels.length > 0 && pizzaValues.length > 0) {
+    const tracePizza = {
+      labels: pizzaLabels,
+      values: pizzaValues,
+      type: 'pie',
+      textinfo: 'label+percent',
+      marker: {
+        colors: ['#0d6efd', '#198754', '#ffc107', '#dc3545'],
+      },
+    };
+
+    const layoutPizza = {
+      margin: { t: 40, l: 20, r: 20, b: 20 },
+      title: { text: 'Status das Substituições', font: { size: 16 } },
+      responsive: true,
+    };
+
+    Plotly.newPlot('graficoPizza', [tracePizza], layoutPizza, { responsive: true });
+  } else {
+    document.getElementById('graficoPizza').innerHTML = '<p class="text-muted text-center mt-4">Sem dados disponíveis.</p>';
+  }
+
+  // ===============================
+  // 📈 Gráfico de Linha — Plantões por Dia
+  // ===============================
+  if (linhaLabels.length > 0 && linhaValues.length > 0) {
+    const traceLinha = {
+      x: linhaLabels,
+      y: linhaValues,
+      mode: 'lines+markers',
+      line: { color: '#198754', width: 3 },
+      marker: { size: 6 },
+    };
+
+    const layoutLinha = {
+      margin: { t: 40, l: 60, r: 20, b: 60 },
+      title: { text: 'Plantões por Dia', font: { size: 16 } },
+      xaxis: { title: 'Data' },
+      yaxis: { title: 'Total de Plantões' },
+      responsive: true,
+    };
+
+    Plotly.newPlot('graficoLinha', [traceLinha], layoutLinha, { responsive: true });
+  } else {
+    document.getElementById('graficoLinha').innerHTML = '<p class="text-muted text-center mt-4">Sem dados disponíveis.</p>';
+  }
+</script>
+{% endblock %}
