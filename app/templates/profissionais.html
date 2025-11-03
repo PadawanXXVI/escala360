@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Profissionais — Escala360{% endblock %}
+
+{% block content %}
+<!-- ============================================================ -->
+<!-- 👥 Página: Listagem de Profissionais -->
+<!-- ============================================================ -->
+<section class="text-center mb-4">
+  <h1 class="fw-bold text-primary">Profissionais Cadastrados</h1>
+  <p class="text-muted">Visualize e gerencie os profissionais ativos na escala.</p>
+</section>
+
+<main class="container">
+  {% if profissionais %}
+  <div class="table-responsive shadow-sm rounded">
+    <table class="table table-striped table-hover align-middle">
+      <thead class="table-primary">
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">Nome</th>
+          <th scope="col">Cargo</th>
+          <th scope="col">E-mail</th>
+          <th scope="col">Telefone</th>
+          <th scope="col" class="text-center">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for prof in profissionais %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>{{ prof.nome }}</td>
+          <td>{{ prof.cargo }}</td>
+          <td>{{ prof.email }}</td>
+          <td>{{ prof.telefone }}</td>
+          <td class="text-center">
+            {% if prof.ativo %}
+              <span class="badge bg-success">Ativo</span>
+            {% else %}
+              <span class="badge bg-secondary">Inativo</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-center text-muted mt-4">Nenhum profissional cadastrado no momento.</p>
+  {% endif %}
+</main>
+{% endblock %}
