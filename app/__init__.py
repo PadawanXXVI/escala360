@@ -5,32 +5,34 @@ from flask_migrate import Migrate
 from sqlalchemy import text
 from dotenv import load_dotenv
 
-# -----------------------------
-# Instâncias globais
-# -----------------------------
+# ============================================================
+# 🔹 Instâncias globais
+# ============================================================
 db = SQLAlchemy()
 migrate = Migrate()
 
 
-# -----------------------------
-# Fábrica da aplicação Flask
-# -----------------------------
+# ============================================================
+# 🔹 Fábrica da aplicação Flask
+# ============================================================
 def create_app():
     """Cria e configura a aplicação Flask Escala360."""
     load_dotenv()
 
-    app = Flask(__name__)
+    app = Flask(_name_)
 
     # -----------------------------
     # Configurações principais
     # -----------------------------
-    app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev")
+    app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev_secret")
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["SQLALCHEMY_ECHO"] = os.getenv("SQLALCHEMY_ECHO", "False") == "True"
 
-    # Configuração do PostgreSQL (via .env)
-    pg_user = os.getenv("POSTGRES_USER", "postgres")
-    pg_pwd = os.getenv("POSTGRES_PASSWORD", "123456")
+    # -----------------------------
+    # Configuração do PostgreSQL (Neon)
+    # -----------------------------
+    pg_user = os.getenv("POSTGRES_USER", "neondb_owner")
+    pg_pwd = os.getenv("POSTGRES_PASSWORD", "")
     pg_host = os.getenv("POSTGRES_HOST", "localhost")
     pg_port = os.getenv("POSTGRES_PORT", "5432")
     pg_db = os.getenv("POSTGRES_DB", "escala360")
@@ -39,17 +41,27 @@ def create_app():
         f"postgresql+psycopg2://{pg_user}:{pg_pwd}@{pg_host}:{pg_port}/{pg_db}"
     )
 
+    # ============================================================
+    # 🔍 Teste de conexão ao banco Neon (logado na Vercel)
+    # ============================================================
+    try:
+        with app.app_context():
+            db.engine.connect()
+        print("✅ Conexão com o banco Neon estabelecida com sucesso!")
+    except Exception as e:
+        print(f"❌ Erro ao conectar ao banco Neon: {e}")
+
     # -----------------------------
     # Inicialização das extensões
     # -----------------------------
     db.init_app(app)
     migrate.init_app(app, db)
 
-    # Importa os modelos para registro no contexto do SQLAlchemy
+    # Importa modelos
     from . import models  # noqa: F401
 
     # -----------------------------
-    # Registro dos blueprints
+    # Registro dos Blueprints
     # -----------------------------
     from .routes.profissionais import bp as profissionais_bp
     from .routes.plantoes import bp as plantoes_bp
@@ -68,58 +80,62 @@ def create_app():
     # -----------------------------
     @app.route("/")
     def index():
-        """Página inicial (será o painel de BI na Fase 6)."""
-        # Consultas SQL (retornam dados do PostgreSQL)
-        q1 = text(
-            """
-            SELECT p.nome, COUNT(e.id) AS total_plantoes
-            FROM profissionais p
-            LEFT JOIN escalas e ON e.id_profissional = p.id
-            GROUP BY p.nome
-            ORDER BY total_plantoes DESC
-            """
-        )
+        """Página inicial (Painel BI - Fase 6)."""
+        try:
+            q1 = text(
+                """
+                SELECT p.nome, COUNT(e.id) AS total_plantoes
+                FROM profissionais p
+                LEFT JOIN escalas e ON e.id_profissional = p.id
+                GROUP BY p.nome
+                ORDER BY total_plantoes DESC
+                """
+            )
 
-        q2 = text(
-            """
-            SELECT status, COUNT(*) AS total
-            FROM substituicoes
-            GROUP BY status
-            ORDER BY total DESC
-            """
-        )
+            q2 = text(
+                """
+                SELECT status, COUNT(*) AS total
+                FROM substituicoes
+                GROUP BY status
+                ORDER BY total DESC
+                """
+            )
 
-        q3 = text(
-            """
-            SELECT data::date AS dia, COUNT(*) AS total
-            FROM plantoes
-            GROUP BY dia
-            ORDER BY dia
-            """
-        )
+            q3 = text(
+                """
+                SELECT data::date AS dia, COUNT(*) AS total
+                FROM plantoes
+                GROUP BY dia
+                ORDER BY dia
+                """
+            )
 
-        r1 = db.session.execute(q1).mappings().all()
-        r2 = db.session.execute(q2).mappings().all()
-        r3 = db.session.execute(q3).mappings().all()
+            r1 = db.session.execute(q1).mappings().all()
+            r2 = db.session.execute(q2).mappings().all()
+            r3 = db.session.execute(q3).mappings().all()
 
-        # Converte resultados para listas
-        carga_labels = [row["nome"] for row in r1]
-        carga_values = [int(row["total_plantoes"] or 0) for row in r1]
+            # Converte resultados
+            carga_labels = [row["nome"] for row in r1]
+            carga_values = [int(row["total_plantoes"] or 0) for row in r1]
 
-        pizza_labels = [row["status"] for row in r2]
-        pizza_values = [int(row["total"] or 0) for row in r2]
+            pizza_labels = [row["status"] for row in r2]
+            pizza_values = [int(row["total"] or 0) for row in r2]
 
-        linha_labels = [row["dia"].isoformat() for row in r3]
-        linha_values = [int(row["total"] or 0) for row in r3]
+            linha_labels = [row["dia"].isoformat() for row in r3]
+            linha_values = [int(row["total"] or 0) for row in r3]
 
-        return render_template(
-            "index.html",
-            carga_labels=carga_labels,
-            carga_values=carga_values,
-            pizza_labels=pizza_labels,
-            pizza_values=pizza_values,
-            linha_labels=linha_labels,
-            linha_values=linha_values,
-        )
+            return render_template(
+                "index.html",
+                carga_labels=carga_labels,
+                carga_values=carga_values,
+                pizza_labels=pizza_labels,
+                pizza_values=pizza_values,
+                linha_labels=linha_labels,
+                linha_values=linha_values,
+            )
+
+        except Exception as e:
+            print(f"❌ Erro ao renderizar index(): {e}")
+            return render_template("erro.html", erro=str(e)), 500
 
     return app
