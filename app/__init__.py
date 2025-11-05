@@ -1,4 +1,5 @@
 import os
+import logging
 from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -20,6 +21,14 @@ def create_app():
     load_dotenv()
 
     app = Flask(__name__)
+
+    # -----------------------------
+    # Configuração de logs (para Vercel)
+    # -----------------------------
+    handler = logging.StreamHandler()
+    handler.setLevel(logging.DEBUG)
+    app.logger.addHandler(handler)
+    app.logger.setLevel(logging.DEBUG)
 
     # -----------------------------
     # Configurações principais
@@ -47,13 +56,15 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
 
-    # Teste de conexão diferido (dentro do contexto)
+    # -----------------------------
+    # Teste de conexão (com log)
+    # -----------------------------
     with app.app_context():
         try:
             db.session.execute(text("SELECT 1"))
-            print("✅ Conexão com o banco Neon estabelecida com sucesso!")
+            app.logger.info("✅ Conexão com o banco Neon estabelecida com sucesso!")
         except Exception as e:
-            print(f"❌ Erro ao conectar ao banco Neon: {e}")
+            app.logger.error(f"❌ Erro ao conectar ao banco Neon: {e}")
 
     # -----------------------------
     # Importa os modelos e rotas
@@ -78,60 +89,43 @@ def create_app():
     def index():
         """Página inicial (Painel BI - Fase 6)."""
         try:
-            q1 = text(
-                """
+            q1 = text("""
                 SELECT p.nome, COUNT(e.id) AS total_plantoes
                 FROM profissionais p
                 LEFT JOIN escalas e ON e.id_profissional = p.id
                 GROUP BY p.nome
                 ORDER BY total_plantoes DESC
-                """
-            )
+            """)
 
-            q2 = text(
-                """
+            q2 = text("""
                 SELECT status, COUNT(*) AS total
                 FROM substituicoes
                 GROUP BY status
                 ORDER BY total DESC
-                """
-            )
+            """)
 
-            q3 = text(
-                """
+            q3 = text("""
                 SELECT data::date AS dia, COUNT(*) AS total
                 FROM plantoes
                 GROUP BY dia
                 ORDER BY dia
-                """
-            )
+            """)
 
             r1 = db.session.execute(q1).mappings().all()
             r2 = db.session.execute(q2).mappings().all()
             r3 = db.session.execute(q3).mappings().all()
 
-            # Converte resultados
-            carga_labels = [row["nome"] for row in r1]
-            carga_values = [int(row["total_plantoes"] or 0) for row in r1]
-
-            pizza_labels = [row["status"] for row in r2]
-            pizza_values = [int(row["total"] or 0) for row in r2]
-
-            linha_labels = [row["dia"].isoformat() for row in r3]
-            linha_values = [int(row["total"] or 0) for row in r3]
-
             return render_template(
                 "index.html",
-                carga_labels=carga_labels,
-                carga_values=carga_values,
-                pizza_labels=pizza_labels,
-                pizza_values=pizza_values,
-                linha_labels=linha_labels,
-                linha_values=linha_values,
+                carga_labels=[r["nome"] for r in r1],
+                carga_values=[int(r["total_plantoes"] or 0) for r in r1],
+                pizza_labels=[r["status"] for r in r2],
+                pizza_values=[int(r["total"] or 0) for r in r2],
+                linha_labels=[r["dia"].isoformat() for r in r3],
+                linha_values=[int(r["total"] or 0) for r in r3],
             )
-
         except Exception as e:
-            print(f"❌ Erro ao renderizar index(): {e}")
+            app.logger.error(f"❌ Erro ao renderizar index(): {e}")
             return render_template("erro.html", erro=str(e)), 500
 
     return app
