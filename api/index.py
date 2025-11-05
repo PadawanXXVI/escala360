@@ -5,4 +5,5 @@
 # que será utilizada para processar todas as requisições HTTP.
 # ============================================================
 
-from app import app as handler
+from app import app
+
