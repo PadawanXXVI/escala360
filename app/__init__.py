@@ -19,7 +19,7 @@ def create_app():
     """Cria e configura a aplicação Flask Escala360."""
     load_dotenv()
 
-    app = Flask(_name_)
+    app = Flask(__name__)
 
     # -----------------------------
     # Configurações principais
@@ -41,28 +41,24 @@ def create_app():
         f"postgresql+psycopg2://{pg_user}:{pg_pwd}@{pg_host}:{pg_port}/{pg_db}"
     )
 
-    # ============================================================
-    # 🔍 Teste de conexão ao banco Neon (logado na Vercel)
-    # ============================================================
-    try:
-        with app.app_context():
-            db.engine.connect()
-        print("✅ Conexão com o banco Neon estabelecida com sucesso!")
-    except Exception as e:
-        print(f"❌ Erro ao conectar ao banco Neon: {e}")
-
     # -----------------------------
     # Inicialização das extensões
     # -----------------------------
     db.init_app(app)
     migrate.init_app(app, db)
 
-    # Importa modelos
-    from . import models  # noqa: F401
+    # Teste de conexão diferido (dentro do contexto)
+    with app.app_context():
+        try:
+            db.session.execute(text("SELECT 1"))
+            print("✅ Conexão com o banco Neon estabelecida com sucesso!")
+        except Exception as e:
+            print(f"❌ Erro ao conectar ao banco Neon: {e}")
 
     # -----------------------------
-    # Registro dos Blueprints
+    # Importa os modelos e rotas
     # -----------------------------
+    from . import models  # noqa: F401
     from .routes.profissionais import bp as profissionais_bp
     from .routes.plantoes import bp as plantoes_bp
     from .routes.escalas import bp as escalas_bp
