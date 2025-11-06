@@ -18,7 +18,7 @@ migrate = Migrate()
 # ============================================================
 def create_app():
     """Cria e configura a aplicação Flask Escala360."""
-    load_dotenv()
+    load_dotenv()  # Carrega variáveis do .env local
 
     app = Flask(__name__)
 
@@ -38,17 +38,28 @@ def create_app():
     app.config["SQLALCHEMY_ECHO"] = os.getenv("SQLALCHEMY_ECHO", "False") == "True"
 
     # -----------------------------
-    # Configuração do PostgreSQL (Neon)
+    # Configuração do PostgreSQL (Neon ou Local)
     # -----------------------------
-    pg_user = os.getenv("POSTGRES_USER", "neondb_owner")
-    pg_pwd = os.getenv("POSTGRES_PASSWORD", "")
-    pg_host = os.getenv("POSTGRES_HOST", "localhost")
-    pg_port = os.getenv("POSTGRES_PORT", "5432")
-    pg_db = os.getenv("POSTGRES_DB", "escala360")
+    db_url = os.getenv("DATABASE_URL")
 
-    app.config["SQLALCHEMY_DATABASE_URI"] = (
-        f"postgresql+psycopg2://{pg_user}:{pg_pwd}@{pg_host}:{pg_port}/{pg_db}"
-    )
+    if db_url and db_url.strip():
+        # Prioriza a conexão Neon/Vercel (segura com SSL)
+        if "sslmode" not in db_url:
+            db_url += "?sslmode=require"
+        app.config["SQLALCHEMY_DATABASE_URI"] = db_url
+        app.logger.info(f"🌐 Usando DATABASE_URL (Neon ou remoto): {db_url.split('@')[-1]}")
+    else:
+        # Fallback para o ambiente local
+        pg_user = os.getenv("POSTGRES_USER", "postgres")
+        pg_pwd = os.getenv("POSTGRES_PASSWORD", "123456")
+        pg_host = os.getenv("POSTGRES_HOST", "localhost")
+        pg_port = os.getenv("POSTGRES_PORT", "5432")
+        pg_db = os.getenv("POSTGRES_DB", "escala360")
+
+        app.config["SQLALCHEMY_DATABASE_URI"] = (
+            f"postgresql+psycopg2://{pg_user}:{pg_pwd}@{pg_host}:{pg_port}/{pg_db}"
+        )
+        app.logger.info("💻 Usando banco local (localhost)")
 
     # -----------------------------
     # Inicialização das extensões
@@ -62,9 +73,9 @@ def create_app():
     with app.app_context():
         try:
             db.session.execute(text("SELECT 1"))
-            app.logger.info("✅ Conexão com o banco Neon estabelecida com sucesso!")
+            app.logger.info("✅ Conexão com o banco estabelecida com sucesso!")
         except Exception as e:
-            app.logger.error(f"❌ Erro ao conectar ao banco Neon: {e}")
+            app.logger.error(f"❌ Erro ao conectar ao banco de dados: {e}")
 
     # -----------------------------
     # Importa os modelos e rotas
