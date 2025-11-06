@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -- coding: utf-8 --
 # ============================================================
 # Script de Teste de Conexão com Banco de Dados (Neon)
 # ============================================================
@@ -20,6 +20,8 @@ def test_database_connection():
         print("🔍 Iniciando teste de conexão com o banco de dados...")
         print("--------------------------------------------------")
 
+        print(f"🔗 URI atual: {app.config['SQLALCHEMY_DATABASE_URI']}")
+
         try:
             # Teste simples de consulta de versão
             result = db.session.execute(text("SELECT version();"))
@@ -30,12 +32,11 @@ def test_database_connection():
             print(f"📦 Versão do PostgreSQL: {safe_version}")
             print("--------------------------------------------------")
 
-            # (Opcional) Teste de criação de tabelas
-            try:
+            # (Opcional) Teste de criação de tabelas — apenas se necessário
+            create_tables = False  # altere para True se quiser testar criação
+            if create_tables:
                 db.create_all()
-                print("🗄️  Tabelas verificadas/criadas com sucesso!")
-            except Exception as table_error:
-                print("⚠️  Aviso: erro ao criar tabelas:", table_error)
+                print("🗄  Tabelas verificadas/criadas com sucesso!")
 
         except Exception as conn_error:
             print("❌ Erro ao conectar ao banco de dados:")
